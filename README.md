@@ -1,16 +1,49 @@
-# React + Vite
+# WashPing 🧺
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+셀프빨래방을 위한 **QR 기반 세탁물 수거 알림 및 방치 방지 서비스**
 
-Currently, two official plugins are available:
+## 문제 상황
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+셀프빨래방에서는 세탁이 끝난 뒤에도 세탁물이 오래 방치되는 문제가 자주 발생합니다.
+이용자는 종료 시간을 놓치기 쉽고, 다음 이용자는 비어 있는 기계를 기다려야 합니다.
 
-## React Compiler
+## 해결 아이디어
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+세탁기와 건조기에 QR코드를 부착하고, 이용자가 QR을 스캔한 뒤 기계에 표시된 남은 시간을 입력하면
+수거 알림을 받을 수 있습니다. 점주는 관리자 화면에서 방치 가능성과 고장 신고를 확인할 수 있습니다.
 
-## Expanding the Oxlint configuration
+## 핵심 기능
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+| 기능 | 설명 |
+|------|------|
+| 기계별 QR | QR을 통해 몇 번 세탁기/건조기인지 바로 확인 |
+| 수거 알림 | 사용자가 입력한 남은 시간을 기준으로 수거 알림 제공 |
+| 방치 방지 | 수거 완료가 확인되지 않으면 방치 가능성을 점주 화면에 표시 |
+| 고장 신고 | 기계별 QR을 통해 정확한 기계 번호와 문제를 신고 |
+
+## 기술 스택
+
+- **언어**: JavaScript (JSX)
+- **UI**: React 19
+- **스타일**: 순수 CSS (프레임워크 없음)
+- **빌드**: Vite
+- **린트**: Oxlint
+
+## 실행 방법
+
+```bash
+npm install     # 의존성 설치
+npm run dev     # 개발 서버 실행
+npm run build   # 프로덕션 빌드
+npm run preview # 빌드 결과 미리보기
+```
+
+## 프로젝트 구조
+
+```
+src/
+├── main.jsx    # 진입점 (App을 #root에 마운트)
+├── App.jsx     # 프로젝트 소개 컴포넌트
+├── App.css     # 컴포넌트 스타일
+└── index.css   # 전역 스타일
+```
