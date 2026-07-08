@@ -3,7 +3,9 @@
 셀프빨래방을 위한 **QR 기반 세탁물 수거 알림 및 방치 방지 서비스**
 
 ## 기획 문서
-- [기획서 (문제 정의 · 시나리오 · 핵심 기능 · 화면 흐름)](docs/plan.md)
+- [기획서 (문제 정의 · 시나리오 · 화면 구조 · 화면 흐름)](docs/plan.md)
+- [프로토타입 (순수 HTML/CSS)](docs/prototype.html)
+- [사용자 흐름도](docs/user-flow.html)
 - [작업 분해 체크리스트](docs/checklist.md)
 
 ## 문제 상황
