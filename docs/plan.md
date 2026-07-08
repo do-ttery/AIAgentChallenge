@@ -93,6 +93,9 @@
 
 ## 4. 화면 흐름
 
+> ▶ **동작 프로토타입 (순수 HTML/CSS):** [prototype/index.html](../prototype/index.html)
+> — 핵심 2개 화면(근거 카드 우선순위 · 오답 루프 진단→복습→재시험)을 클릭해볼 수 있음.
+
 ```mermaid
 flowchart TD
     S1["화면1<br/>자료 입력<br/>(과목·남은시간·자료 4종)"]
