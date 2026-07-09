@@ -5,6 +5,9 @@ node_modules/
 # build output
 dist/
 
+# Vite 캐시 (자동 생성 임시 폴더)
+.vite/
+
 # 로컬 전용 기획 메모 (커밋 제외)
 project1_v2/concept.md
 
