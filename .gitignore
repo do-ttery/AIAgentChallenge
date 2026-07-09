@@ -1,0 +1,15 @@
+# dependencies (심볼릭 링크 포함)
+node_modules
+node_modules/
+
+# build output
+dist/
+
+# Vite 캐시 (자동 생성 임시 폴더)
+.vite/
+
+# 로컬 전용 기획 메모 (커밋 제외)
+project1_v2/concept.md
+
+# 옛 작업 폴더
+project1/
