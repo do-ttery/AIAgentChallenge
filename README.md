@@ -4,10 +4,15 @@
 
 ## 문서
 
-- [기획서 (문제 정의 · 시나리오 · 핵심 기능 · 로드맵)](docs/plan.md)
-- [작업 분해 체크리스트](docs/checklist.md)
-- [프로토타입 (순수 HTML/CSS)](docs/prototype.html)
-- [CLAUDE.md (구현 규칙 · 상세 설계)](CLAUDE.md)
+| 문서 | 답하는 질문 |
+|---|---|
+| [기획서 `plan.md`](docs/plan.md) | **왜** 만드는가 — 문제 정의 · 시나리오 · 성공 지표 |
+| [**백로그 `backlog.md`**](docs/backlog.md) | **무엇을 · 언제 · 누가** — Task 26개 · 우선순위 · 4주 로드맵 |
+| [체크리스트 `checklist.md`](docs/checklist.md) | **어떻게** 하는가 — 커밋 1개 = 체크박스 1개 |
+| [`CLAUDE.md`](CLAUDE.md) | 구현 규칙 · 상세 설계 (API Spec · Data Model · State Machine) |
+| [프로토타입](docs/prototype.html) | 화면 시안 (순수 HTML/CSS) |
+
+**지금 뭘 할지 모르겠다면 [백로그](docs/backlog.md)를 여세요.**
 
 ## 문제 상황
 
@@ -51,27 +56,30 @@ AI의 행동은 **되돌릴 수 있는가**와 **돈이 나가는가**를 기준
 
 ## 세션 상태 전이
 
+상태는 **6개만** 사용합니다. ([CLAUDE.md의 State Machine](CLAUDE.md)이 기준입니다)
+
 ```mermaid
 stateDiagram-v2
     [*] --> IDLE
-    IDLE --> RUNNING : 전력 감지 (세탁 시작)
-    RUNNING --> SPIN : 전력 스파이크 (탈수)
-    SPIN --> DONE : 전력 0W (종료)
-    DONE --> COLLECTED : 도어 열림
-    DONE --> ABANDONED : 30분간 미개방
-    ABANDONED --> NUDGE_1 : 1차 수거 알림
-    NUDGE_1 --> NUDGE_2 : +30분, 2차 알림
-    NUDGE_2 --> RESOLVED : 수거 완료
+    IDLE --> RUNNING : 전력 급상승 (세탁 시작 + 세션 생성)
+    RUNNING --> SPIN : 탈수 스파이크
+    SPIN --> DONE : 전력 0W 복귀 유지
+    DONE --> COLLECTED : 도어 열림 / 다음 세탁 시작 / 고객 수거 탭
+    DONE --> ABANDONED : 종료 후 30분간 수거 신호 없음
+    ABANDONED --> COLLECTED : 뒤늦게 수거됨
     COLLECTED --> [*]
-    RESOLVED --> [*]
-    RUNNING --> ESCALATED : 전력·센서 이상
-    DONE --> ESCALATED : 전력·센서 이상
-    ABANDONED --> ESCALATED : 전력·센서 이상
-    ESCALATED --> [*] : 사장님 개입
 ```
 
-전이 트리거는 전력 패턴(시작·탈수·종료), 도어 센서(열림), 타이머(30분 → 방치, +30분 → 2차 넛지)입니다.
-`ESCALATED`는 에이전트가 처리할 수 없는 이상 상황으로, 어느 단계에서든 발생할 수 있습니다.
+전이 트리거는 전력 패턴(시작·탈수·종료), 도어 센서(열림), 타이머(30분 → 방치)입니다.
+
+**1차·2차 수거 알림은 상태가 아닙니다.** `ABANDONED` 상태에서 발생하는 *행동*이며, 발송 이력은 `notification` 테이블에 남아 중복 발송을 막는 근거가 됩니다. 상태를 늘리지 않는 이유는 전이 경우의 수와 테스트가 그만큼 불어나기 때문입니다.
+
+| ABANDONED 이후 | 조건 | 행동 |
+|---|---|---|
+| 알림 채널 있음 | QR 알림 신청함 | 1차 수거 알림 → (+30분) 2차 수거 알림 |
+| 알림 채널 없음 | QR 미신청 | 사장님 알림 + QR 랜딩을 방치 안내 모드로 전환 |
+
+센서·전력 이상 같은 예외 상황은 상태값이 아니라 대시보드의 **예외 상황** 영역에 표시합니다.
 
 ## 화면
 
@@ -93,52 +101,74 @@ stateDiagram-v2
 | Hardware | 스마트플러그(Tapo P110M), Zigbee 문열림 센서 |
 | Notification | Web Push API + Service Worker (VAPID) |
 | 스타일 | 순수 CSS + CSS 변수 + CSS Modules (유틸 프레임워크 미사용) |
+| 모노레포 | npm workspaces + `concurrently` |
 
-라이브러리 선택 사유와 상세 설계는 [CLAUDE.md](CLAUDE.md)에 있습니다. 여기 없는 라이브러리를 추가할 때는 사유와 함께 CLAUDE.md에 기록한 뒤 도입합니다.
+**추가 라이브러리와 사유**
+
+| 라이브러리 | 사유 |
+|---|---|
+| `react-router-dom` | 고객(`/m/:machineId`)·사장님(`/owner`) 화면 분리에 필요 |
+| `concurrently` | `npm run dev` 한 번으로 client·server를 함께 띄우기 위해 (터미널 2개 방지) |
+| `cors` | 개발 중 client(5173) → server(3000) 교차 출처 요청 허용 |
+
+`better-sqlite3`는 DB 작업(T-09) 시점에 추가합니다. 그 외 라이브러리를 추가할 때는 사유와 함께 이 표와 [CLAUDE.md](CLAUDE.md)에 기록한 뒤 도입합니다.
 
 ## 실행 방법
 
+npm workspaces 모노레포입니다. **루트에서 한 번만 설치하면 `client`와 `server`가 함께** 잡힙니다.
+
 ```bash
-npm install     # 의존성 설치
-npm run dev     # 개발 서버 실행
+npm install     # 의존성 설치 (루트 한 번으로 client·server 모두)
+npm run dev     # client(5173) + server(3000) 동시 실행
 npm run lint    # 린트 검사 (Oxlint)
 npm run build   # 프로덕션 빌드
-npm run preview # 빌드 결과 미리보기
 ```
+
+한쪽만 띄우려면 `npm run dev:client` / `npm run dev:server`를 씁니다.
+
+개발 중 client의 `/api`·`/ingest` 요청은 Vite 프록시가 server(3000)로 넘깁니다. 프론트에서는 그냥 `fetch('/api/machines')`처럼 상대 경로로 부르면 됩니다.
 
 ## 디렉토리 구조
 
-현재 저장소 (프론트엔드 스캐폴드):
-
 ```text
-/src
-  main.jsx          # 진입점
-  ProjectIntro.jsx  # 프로젝트 소개 화면
-/docs               # plan.md, checklist.md, prototype.html
-CLAUDE.md           # 구현 규칙 · 상세 설계
-```
-
-앞으로 만들어 갈 구조:
-
-```text
-/client        # React 앱
+/client                    # React (Vite) — 포트 5173
   /src
+    App.jsx                # 라우팅
+    /pages
+      /m                   # 고객 — QR 랜딩(/m/:machineId), 진행 화면
+      /owner               # 사장님 — 대시보드(/owner)
     /components
-    /pages     # 고객(m/*), 사장님(owner/*) 페이지
-    /styles
-/server        # Express API
-  /routes
-  /services    # 상태머신, 알림 등 도메인 로직
+    /styles/tokens.css     # 디자인 토큰 (색·타이포·라운드·8pt 그리드)
+    /mocks                 # mock 데이터 — 구조는 CLAUDE.md의 Data Model과 동일하게
+/server                    # Express — 포트 3000
+  index.js
+  /routes                  # POST /ingest/:machineId 등
+  /services                # 상태 머신 · 방치 대응 · 알림
+  /scripts                 # 센서 폴링 · 시뮬레이터
+  /data                    # app.db (커밋 금지)
+/docs                      # plan.md · backlog.md · checklist.md · prototype.html
+CLAUDE.md                  # 구현 규칙 · 상세 설계
 ```
 
-> `/server`와 하드웨어 연동은 아직 구현 전입니다. 개발 중에는 전력 데이터를 시뮬레이터(`server/scripts/simulate.js`)로 주입할 예정입니다.
+> `/server`의 상태 머신·DB·알림과 하드웨어 연동은 아직 뼈대만 있습니다. 개발 중에는 전력 데이터를 시뮬레이터(`server/scripts/`)가 **운영과 동일한** `POST /ingest/:machineId`로 주입합니다. 진행 상황은 [백로그](docs/backlog.md)를 보세요.
 
 ## 개발 규칙
 
 작업 전에 [CLAUDE.md](CLAUDE.md)를 먼저 읽습니다. 화면·컴포넌트를 만들 때는 디자인 시스템(`laundry-design` 스킬)을 적용하고, CLAUDE.md에 없는 결정이 필요하면 임의로 정하지 않고 팀에 묻습니다.
+
+작업을 시작할 때는 [백로그](docs/backlog.md)에서 Task를 고르고 상태를 `🟡 진행`으로 바꿉니다. 둘이 같은 걸 잡는 사고를 막는 유일한 장치입니다.
 
 커밋은 `타입: 요약` 형식으로 작성하며, [체크리스트](docs/checklist.md)의 체크박스 1개를 커밋 1개로 하는 것을 기본으로 합니다.
 
 ```bash
 git commit -m "feat: QR 랜딩 페이지 알림 신청 버튼 구현"
 ```
+
+## 역할
+
+| 담당 | 영역 |
+|---|---|
+| **서원** (`swlog`) | `client/` 화면 3개 · 디자인 시스템 적용 · 시뮬레이터 |
+| **도경** (`do-ttery`) | `server/` Express · SQLite · 상태 머신 · 알림 · Tapo 센서 |
+
+두 사람이 만나는 지점은 [CLAUDE.md](CLAUDE.md)의 **API Spec과 Data Model 하나뿐**입니다. 이미 확정돼 있으므로 서로를 기다리지 않습니다. 프론트는 그 구조 그대로 mock으로 화면을 완성하고, 나중에 mock만 `fetch`로 갈아끼웁니다.

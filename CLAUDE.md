@@ -7,17 +7,26 @@
 MVP 목표
 방치 세탁물 자동 대응
 
-상세 기획: `docs/plan.md` / 작업 단위: `docs/checklist.md`
+상세 기획: `docs/plan.md`
+Task·우선순위·4주 로드맵: `docs/backlog.md`
+작업 단위(커밋 1개 = 체크박스 1개): `docs/checklist.md`
+
+역할
+서원(`swlog`) — `client/` 화면 · 시뮬레이터
+도경(`do-ttery`) — `server/` 상태머신 · 알림 · 센서
 
 ---
 
 # Architecture
 
 Frontend
-React + Vite
+React + Vite + react-router-dom
 
 Backend
-Express
+Express + cors
+
+Monorepo
+npm workspaces + concurrently
 
 Database
 SQLite (better-sqlite3)
@@ -37,20 +46,27 @@ Web Push API + Service Worker + VAPID
 
 # Folder
 
+npm workspaces 모노레포. 루트에서 `npm install` 한 번, `npm run dev`로 둘 다 실행.
+
 ```
-client/
+client/             # React (Vite) — 5173
   src/
-    pages/        # 고객(m/*), 사장님(owner/*)
+    App.jsx         # 라우팅
+    pages/          # 고객(m/*), 사장님(owner/*)
     components/
-    styles/
-server/
+    styles/         # tokens.css (디자인 토큰)
+    mocks/          # mock 데이터 (구조는 아래 Data Model과 동일)
+server/             # Express — 3000
+  index.js
   routes/
-  services/       # 상태머신, 방치 대응, 알림
-  scripts/        # 센서 폴링, 시뮬레이터
-  data/           # app.db (커밋 금지)
-docs/             # plan.md, checklist.md, prototype.html
-assets/           # 마스코트, 로고
+  services/         # 상태머신, 방치 대응, 알림
+  scripts/          # 센서 폴링, 시뮬레이터
+  data/             # app.db (커밋 금지)
+docs/               # plan.md, backlog.md, checklist.md, prototype.html
+assets/             # 마스코트, 로고
 ```
+
+client의 `/api`·`/ingest` 요청은 Vite 프록시가 server로 넘긴다. 프론트는 상대 경로로 호출한다.
 
 ---
 
