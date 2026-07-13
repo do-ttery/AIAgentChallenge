@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamCast — 운영체제</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 화면 전환 라디오 (JS 없이 :checked 로 토글) -->
+  <input class="nav" type="radio" name="nav" id="nav1" checked />
+  <input class="nav" type="radio" name="nav" id="nav2" />
+
+  <div class="app">
+    <header class="appbar">
+      <span class="logo">Exam<span class="dot">Cast</span></span>
+      <span class="subject">운영체제 <span class="ca">▾</span></span>
+      <span class="spacer"></span>
+      <span class="dbadge">D-3</span>
+      <span class="ava">지</span>
+    </header>
+
+    <div class="body">
+      <aside class="sidebar">
+        <div class="side-lbl">학습</div>
+        <label for="nav1"><span class="ic">📋</span> 공부 우선순위</label>
+        <label for="nav2"><span class="ic">✏️</span> 문제 풀이</label>
+        <div class="side-item off"><span class="ic">📊</span> 학습 대시보드</div>
+        <div class="side-lbl" style="margin-top:16px;">도구</div>
+        <div class="side-item off"><span class="ic">🎧</span> 음성 복습</div>
+        <div class="side-item off"><span class="ic">📄</span> PDF 내보내기</div>
+        <div class="side-foot">
+          <b>근거 강도: 기출 있음</b><br />
+          출제 이력 근거가 포함돼 카드가 진하게 표시됩니다.
+        </div>
+      </aside>
+
+      <main class="main">
+        <!-- ===== 화면 1: 교차 분석 — 근거 카드 우선순위 ===== -->
+        <section class="screen" id="s1">
+          <div class="phead">
+            <div>
+              <h1>공부 우선순위</h1>
+              <p>기출·PPT·공지·후기를 교차 분석해 뭐부터 볼지 정리했어요.</p>
+            </div>
+            <span class="pill">근거 강도 · <b>기출 있음(진함)</b></span>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><div class="n">18</div><div class="k">전체 개념</div></div>
+            <div class="stat"><div class="n">4</div><div class="k">최우선 표시</div></div>
+            <div class="stat"><div class="n">3일</div><div class="k">남은 시간</div></div>
+          </div>
+
+          <div class="cards">
+            <div class="card p1">
+              <div class="crow">
+                <span class="chip p1">🔥 최우선</span>
+                <span class="deg strong">근거 <span class="bars"><i></i><i></i><i></i></span> 진함</span>
+              </div>
+              <h3>페이지 교체 알고리즘</h3>
+              <p class="why"><b>근거 —</b> 기출 3년 연속 출제 + 올해 PPT 9주차에 그대로 존재</p>
+              <details>
+                <summary>원본 보기</summary>
+                <div class="src">· 기출: 2022 중간 3번 / 2023 기말 2번 / 2024 중간 4번<br />· PPT: 9주차 “페이지 교체 — FIFO·LRU·Optimal”</div>
+              </details>
+            </div>
+
+            <div class="card p2">
+              <div class="crow">
+                <span class="chip p2">⚠️ 변형 주의</span>
+                <span class="deg strong">근거 <span class="bars"><i></i><i></i><i></i></span> 진함</span>
+              </div>
+              <h3>LRU 계산 문제 (2024년 5번 유형)</h3>
+              <p class="why"><b>근거 —</b> 교수 출제 유형과 일치, 참조열 숫자만 바꿔 재출제 가능</p>
+              <details>
+                <summary>원본 보기</summary>
+                <div class="src">· 기출: 2024 중간 5번 “참조열이 주어졌을 때 LRU 페이지 폴트 수는?”</div>
+              </details>
+            </div>
+
+            <div class="card p3">
+              <div class="crow">
+                <span class="chip p3">✨ 신규 후보</span>
+                <span class="deg soft">근거 <span class="bars"><i></i><i></i><i></i></span> 추정</span>
+              </div>
+              <h3>가상화 (Virtualization)</h3>
+              <p class="why"><b>근거 —</b> 올해 PPT에 새로 추가된 단원, 기출엔 없음 → 신규 출제 가능</p>
+              <details>
+                <summary>원본 보기</summary>
+                <div class="src">· PPT: 13주차 “가상화” (작년 자료엔 없던 신규 슬라이드)</div>
+              </details>
+            </div>
+
+            <div class="card p4">
+              <div class="crow">
+                <span class="chip p4">💬 후기 참고</span>
+                <span class="deg soft">근거 <span class="bars"><i></i><i></i><i></i></span> 옅음</span>
+              </div>
+              <h3>서술형 비중 높음</h3>
+              <p class="why"><b>근거 —</b> 후기 “서술형 위주” + 기출 문항 구성과 일치</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <label for="nav2" class="btn primary">이 우선순위로 문제 풀기 →</label>
+            <span class="btn ghost">PPT와 나란히 보기</span>
+          </div>
+        </section>
+
+        <!-- ===== 화면 2: 오답 루프 — 진단 → 복습 → 재시험 ===== -->
+        <section class="screen" id="s2">
+          <div class="phead">
+            <div>
+              <h1>문제 풀이</h1>
+              <p>틀린 문제는 개념 약점으로 진단하고, 극복할 때까지 다시 풀려요.</p>
+            </div>
+            <span class="pill">오답 루프 · <b>관찰→진단→복습→재시험</b></span>
+          </div>
+
+          <div class="qbar">
+            <span>페이지 교체 · 예상 문제</span>
+            <span class="mini"><i></i></span>
+            <span>1 / 10</span>
+          </div>
+
+          <div class="quiz">
+            <input class="opt-in" type="radio" name="q1" id="o1a" />
+            <input class="opt-in" type="radio" name="q1" id="o1b" />
+            <input class="opt-in" type="radio" name="q1" id="o1c" />
+            <input class="retry-in" type="checkbox" id="retry" />
+
+            <p class="qnum">Q1 · 객관식</p>
+            <p class="q">TLB(Translation Lookaside Buffer)에 대한 설명으로 옳은 것은?</p>
+
+            <label class="opt" for="o1a">최근 사용한 <b>페이지 테이블 항목(주소 변환)</b>을 캐싱해 변환 속도를 높인다</label>
+            <label class="opt" for="o1b">디스크에 없는 페이지를 요청할 때 발생하는 <b>page fault</b>를 처리하는 장치다</label>
+            <label class="opt" for="o1c">CPU 캐시 미스가 났을 때 <b>메모리 데이터</b>를 임시 저장하는 버퍼다</label>
+
+            <div class="fb fb-wrong">
+              <span class="tag">✗ 오답 — 그런데 여기서 끝이 아니에요</span>
+              <p class="diag">TLB miss와 page fault를 혼동 → “주소 변환 흐름” 이해가 부족합니다.</p>
+              <p class="sub">TLB는 <b>주소 변환</b> 캐시, page fault는 <b>페이지가 메모리에 없을 때</b> — 둘은 다른 층에서 일어나요.</p>
+              <div class="tts">
+                <span class="play">▶</span>
+                <span class="lbl">주소 변환 흐름 복습<small>가상주소 → TLB → 페이지 테이블 → 물리주소</small></span>
+                <span class="dur">3:00</span>
+              </div>
+              <label class="retry-btn" for="retry">유사 문제로 재시험 →</label>
+            </div>
+
+            <div class="fb fb-right">
+              <span class="tag">✓ 정답</span>
+              <p class="diag">맞아요 — TLB는 주소 변환 항목을 캐싱하는 장치예요.</p>
+              <p class="sub">이 개념은 이미 이해했네요. 다음 약점으로 넘어갈게요.</p>
+            </div>
+
+            <div class="retryblock">
+              <input class="opt-in" type="radio" name="q2" id="o2a" />
+              <input class="opt-in" type="radio" name="q2" id="o2b" />
+
+              <p class="qnum">재시험 · 유사 문제</p>
+              <p class="q">가상주소 변환 중 TLB에 항목이 없으면(TLB miss) 다음에 일어나는 일은?</p>
+
+              <label class="opt" for="o2a"><b>페이지 테이블</b>을 조회해 주소를 변환하고, 그 결과를 TLB에 채운다</label>
+              <label class="opt" for="o2b">곧바로 <b>page fault</b>가 발생해 디스크에서 페이지를 불러온다</label>
+
+              <div class="fb2ok">
+                <span class="tag">✓ 극복!</span>
+                <p class="diag">주소 변환 흐름을 잡았어요. TLB miss ≠ page fault 를 구분했습니다.</p>
+                <p class="sub">‘주소 변환 흐름’ 숙련도 40 → 70 · 상태: 학습중 → <b>극복</b></p>
+              </div>
+              <div class="fb2no">
+                <span class="tag">아직 — 더 쉬운 설명으로</span>
+                <p class="sub">TLB miss는 “주소를 못 찾음(변환 실패)”이지 “페이지가 없음”이 아니에요. page fault와는 다른 단계예요. 다시 볼까요?</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="gauge">
+            <div class="row"><span>주소 변환 흐름</span><span class="state">학습중</span></div>
+            <div class="track"><div class="fill"></div></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
