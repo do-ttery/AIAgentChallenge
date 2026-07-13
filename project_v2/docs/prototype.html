@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>무인빨래방 AI 점장 에이전트 — 웹 프로토타입 (순수 HTML/CSS)</title>
+<style>
+  :root {
+    --ink: #1f2937;
+    --sub: #6b7280;
+    --line: #e5e7eb;
+    --accent: #6366f1;
+    --accent-dark: #4338ca;
+    --accent-soft: #eef2ff;
+    --warn: #d97706;
+    --warn-soft: #fff7ed;
+    --ok: #059669;
+    --ok-soft: #ecfdf5;
+    --bg: #f3f4f6;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg);
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    color: var(--ink);
+    line-height: 1.55;
+    padding: 40px 24px 64px;
+  }
+
+  /* ── 보드 헤더 ─────────────────────────── */
+  .board-head { max-width: 1040px; margin: 0 auto 36px; }
+  .board-head .tag {
+    display: inline-block; padding: 4px 12px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent-dark);
+    font-size: 13px; font-weight: 600; margin-bottom: 10px;
+  }
+  .board-head h1 { font-size: 24px; font-weight: 800; }
+  .board-head p { color: var(--sub); font-size: 14px; margin-top: 6px; }
+
+  .screen-label { max-width: 1040px; margin: 48px auto 12px; }
+  .screen-label b { font-size: 16px; }
+  .screen-label span { display: block; font-size: 13px; color: var(--sub); }
+
+  /* ── 브라우저 프레임 ───────────────────── */
+  .browser {
+    max-width: 1040px; margin: 0 auto;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: #fff; overflow: hidden;
+    box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  }
+  .chrome {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: #fafafa;
+    border-bottom: 1px solid var(--line);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .dots i:nth-child(1) { background: #d1d5db; }
+  .dots i:nth-child(2) { background: #d1d5db; }
+  .dots i:nth-child(3) { background: #d1d5db; }
+  .urlbar {
+    flex: 1; padding: 6px 14px; border-radius: 999px;
+    background: #fff; border: 1px solid var(--line);
+    font-size: 12.5px; color: var(--sub);
+  }
+
+  /* ── 공통 웹 페이지 요소 ───────────────── */
+  .nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 32px; border-bottom: 1px solid var(--line);
+  }
+  .nav .logo { font-weight: 800; font-size: 16px; color: var(--accent-dark); }
+  .nav .right { font-size: 13px; color: var(--sub); }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; vertical-align: middle;
+  }
+  .badge.run  { background: var(--accent-soft); color: var(--accent-dark); }
+  .badge.done { background: var(--ok-soft); color: var(--ok); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.idle { background: #f3f4f6; color: var(--sub); }
+
+  .btn {
+    display: inline-block; padding: 13px 28px; border-radius: 12px;
+    text-align: center; font-size: 15px; font-weight: 700;
+    border: none; text-decoration: none; cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.block { display: block; width: 100%; }
+
+  /* ── ① / ② 고객 페이지 (센터 카드형) ──── */
+  .page-center { padding: 48px 24px 64px; background: linear-gradient(#fff, #fafaff); }
+  .card {
+    max-width: 460px; margin: 0 auto; padding: 32px;
+    border: 1px solid var(--line); border-radius: 16px; background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,.05);
+  }
+  .card h2 { font-size: 21px; font-weight: 800; }
+  .card .sub { font-size: 13.5px; color: var(--sub); margin-top: 3px; }
+
+  .machine-hero {
+    margin: 20px 0; padding: 22px; border-radius: 14px;
+    background: var(--accent-soft); text-align: center;
+  }
+  .machine-hero .no { font-size: 32px; font-weight: 800; color: var(--accent-dark); }
+  .machine-hero .st { font-size: 13.5px; color: #4b5563; margin-top: 6px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 20px; }
+  .chip {
+    padding: 8px 14px; border-radius: 999px; font-size: 13.5px;
+    border: 1px solid var(--line); background: #fafafa;
+  }
+  .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; }
+  .hint { font-size: 12.5px; color: var(--sub); text-align: center; margin-top: 12px; }
+
+  .eta { text-align: center; margin: 22px 0 8px; }
+  .eta .time { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
+  .eta .range { font-size: 13px; color: var(--sub); margin-top: 2px; }
+  .progress {
+    height: 9px; border-radius: 999px; background: #e5e7eb;
+    margin: 18px 0 8px; overflow: hidden;
+  }
+  .progress > div { height: 100%; width: 62%; border-radius: 999px; background: var(--accent); }
+  .steps { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
+  .steps .on { color: var(--accent-dark); font-weight: 700; }
+  .notify-card {
+    margin-top: 20px; padding: 14px 16px; border-radius: 12px;
+    background: var(--ok-soft); font-size: 13.5px; color: #065f46;
+  }
+
+  /* ── ③ 사장님 대시보드 (사이드바형) ────── */
+  .dash { display: flex; min-height: 520px; }
+  .side {
+    width: 200px; border-right: 1px solid var(--line);
+    padding: 24px 0; background: #fafafa; flex-shrink: 0;
+  }
+  .side .item {
+    padding: 11px 24px; font-size: 14px; color: var(--sub);
+  }
+  .side .item.on {
+    color: var(--accent-dark); font-weight: 700;
+    background: var(--accent-soft); border-right: 3px solid var(--accent);
+  }
+  .main { flex: 1; padding: 28px 32px; }
+  .main h2 { font-size: 20px; font-weight: 800; }
+  .main .sub { font-size: 13.5px; color: var(--sub); margin-top: 3px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+  .stat {
+    border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  }
+  .stat .k { font-size: 12.5px; color: var(--sub); }
+  .stat .v { font-size: 24px; font-weight: 800; margin-top: 2px; }
+  .stat .v small { font-size: 13px; font-weight: 600; color: var(--ok); }
+
+  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 8px 0 4px; }
+  .m-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .m-card.alert { border-color: #fdba74; background: var(--warn-soft); }
+  .m-card .name { font-size: 14px; font-weight: 700; }
+  .m-card .badge { margin-top: 6px; }
+  .m-card .meta { font-size: 12.5px; color: var(--sub); margin-top: 8px; }
+
+  .feed-title { font-size: 13px; font-weight: 700; color: var(--sub); margin: 24px 0 6px; letter-spacing: .05em; }
+  .feed-item {
+    display: flex; gap: 14px; padding: 11px 2px;
+    border-bottom: 1px dashed var(--line); font-size: 13.5px;
+  }
+  .feed-item .t { color: var(--sub); font-size: 12.5px; min-width: 44px; }
+  .feed-item .ok { color: var(--ok); font-weight: 700; }
+  .feed-item .esc { color: var(--warn); font-weight: 700; }
+
+  .flow-note {
+    max-width: 1040px; margin: 48px auto 0; padding: 18px 22px;
+    border-radius: 12px; background: #fff; border: 1px solid var(--line);
+    font-size: 14px; color: var(--sub);
+  }
+  .flow-note b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <span class="tag">웹 프로토타입 · 순수 HTML/CSS · JS 없음</span>
+  <h1>무인빨래방 AI 점장 에이전트 — 화면 프로토타입</h1>
+  <p>고객 흐름(QR 랜딩 → 진행 중)과 사장님 대시보드. 실제 데이터·동작은 없으며 화면 구조 확인용.</p>
+</header>
+
+<!-- ① QR 랜딩 -->
+<div class="screen-label">
+  <b>① QR 랜딩 — 알림 신청</b>
+  <span>세탁기에 붙은 QR을 찍으면 열리는 웹 페이지 (앱 설치 없음)</span>
+</div>
+<div class="browser">
+  <div class="chrome">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div class="urlbar">laundry-agent.app/m/washer-3</div>
+  </div>
+  <nav class="nav">
+    <span class="logo">🧺 AI 점장</span>
+    <span class="right">○○빨래방 역삼점</span>
+  </nav>
+  <div class="page-center">
+    <div class="card">
+      <h2>세탁 알림 받기</h2>
+      <p class="sub">종료 10분 전과 완료 시점에 알려드려요</p>
+
+      <div class="machine-hero">
+        <div class="no">세탁기 3번</div>
+        <div class="st"><span class="badge run">세탁 중</span> &nbsp;에이전트가 자동으로 감지했어요</div>
+      </div>
+
+      <p class="sub" style="margin-bottom:6px;">(선택) 어떤 코스를 돌리셨나요? — 안 골라도 돼요</p>
+      <div class="chips">
+        <span class="chip on">표준 47분</span>
+        <span class="chip">쾌속 30분</span>
+        <span class="chip">이불 60분</span>
+        <span class="chip">모름</span>
+      </div>
+
+      <a class="btn primary block" href="#">이 세탁기 알림 신청</a>
+      <p class="hint">연락처 입력 없이 이 브라우저로 알림이 와요</p>
+    </div>
+  </div>
+</div>
+
+<!-- ② 진행 중 -->
+<div class="screen-label">
+  <b>② 진행 중 — 상태 확인</b>
+  <span>알림 신청 후 보는 페이지 · 예상 시각은 점이 아니라 범위로, 진행되며 좁혀짐</span>
+</div>
+<div class="browser">
+  <div class="chrome">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div class="urlbar">laundry-agent.app/m/washer-3/status</div>
+  </div>
+  <nav class="nav">
+    <span class="logo">🧺 AI 점장</span>
+    <span class="right">○○빨래방 역삼점</span>
+  </nav>
+  <div class="page-center">
+    <div class="card">
+      <h2>세탁기 3번 <span class="badge run">세탁 중</span></h2>
+
+      <div class="eta">
+        <div class="time">18:49 종료 예상</div>
+        <div class="range">예상 범위 18:45 ~ 18:55</div>
+      </div>
+
+      <div class="progress"><div></div></div>
+      <div class="steps">
+        <span class="on">세탁</span><span class="on">헹굼</span><span>탈수</span><span>완료</span>
+      </div>
+
+      <div class="notify-card">
+        🔔 마지막 탈수가 감지되면 <b>“10분 후 종료, 지금 출발하세요”</b> 알림을 보내드려요.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ③ 사장님 대시보드 -->
+<div class="screen-label">
+  <b>③ 사장님 대시보드 — 보고만 받는 화면</b>
+  <span>에이전트가 감지·판단·대응한 결과를 확인 · 사장님이 누른 버튼 0개</span>
+</div>
+<div class="browser">
+  <div class="chrome">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div class="urlbar">laundry-agent.app/owner/dashboard</div>
+  </div>
+  <div class="dash">
+    <aside class="side">
+      <div class="item on">대시보드</div>
+      <div class="item">처리 내역</div>
+      <div class="item">기기 관리</div>
+      <div class="item">매장 정책</div>
+    </aside>
+    <div class="main">
+      <h2>우리 매장 <span class="badge done">에이전트 정상 가동</span></h2>
+      <p class="sub">7월 9일 (목) 21:30 기준</p>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">오늘 가동 사이클</div><div class="v">27회</div></div>
+        <div class="stat"><div class="k">방치 발생 → 자동 해결</div><div class="v">3건 <small>/ 3건</small></div></div>
+        <div class="stat"><div class="k">사장님 개입 필요</div><div class="v">1건</div></div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="m-card">
+          <div class="name">세탁기 1</div>
+          <span class="badge run">세탁 중</span>
+          <div class="meta">19:05 종료 예상</div>
+        </div>
+        <div class="m-card alert">
+          <div class="name">세탁기 2</div>
+          <span class="badge warn">방치 32분</span>
+          <div class="meta">2차 수거 알림 발송됨</div>
+        </div>
+        <div class="m-card">
+          <div class="name">세탁기 3</div>
+          <span class="badge done">수거 완료</span>
+          <div class="meta">18:51 종료 · 18:58 수거</div>
+        </div>
+        <div class="m-card">
+          <div class="name">건조기 1</div>
+          <span class="badge idle">대기</span>
+          <div class="meta">마지막 사용 17:40</div>
+        </div>
+      </div>
+
+      <div class="feed-title">오늘 에이전트 처리 내역</div>
+      <div class="feed-item"><span class="t">20:41</span><span><span class="ok">자동 해결</span> — 세탁기 2 방치 → 1차 알림 후 수거됨</span></div>
+      <div class="feed-item"><span class="t">19:12</span><span><span class="ok">자동 해결</span> — 세탁기 1 방치 28분 → 2차 알림 후 수거됨</span></div>
+      <div class="feed-item"><span class="t">18:03</span><span><span class="esc">확인 필요</span> — 세탁기 4 전력 패턴 이상 (사이클 중단 의심)</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-note">
+  <b>흐름:</b> 고객이 QR 스캔(①) → 에이전트가 전력 패턴으로 상태 감지 → 진행 중 페이지(②)와 출발·완료 알림 →
+  미수거 시 방치 판정과 단계적 넛지 → 사장님은 결과 보고만 확인(③).
+  <b>사장님이 누른 버튼은 0개</b> — 이것이 이 서비스가 에이전트인 이유.
+</div>
+
+</body>
+</html>

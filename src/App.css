@@ -1,0 +1,291 @@
+.page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 56px 24px;
+}
+
+.hero {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 56px;
+  border-radius: 32px;
+  background: linear-gradient(135deg, #eaf4ff, #ffffff);
+  box-shadow: 0 24px 70px rgba(39, 76, 119, 0.12);
+}
+
+.badge {
+  display: inline-block;
+  margin: 0 0 20px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 64px;
+  letter-spacing: -2px;
+}
+
+.subtitle {
+  max-width: 720px;
+  margin: 16px 0 0;
+  color: #526072;
+  font-size: 22px;
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.hero-actions button,
+.timer-form button {
+  padding: 14px 22px;
+  border-radius: 14px;
+  background: #2563eb;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.hero-actions .secondary {
+  background: white;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.problem-section {
+  max-width: 1080px;
+  margin: 28px auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.card,
+.admin-panel,
+.feature-section {
+  padding: 28px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 16px 50px rgba(31, 41, 55, 0.08);
+}
+
+.card h2,
+.admin-panel h2,
+.feature-section h2 {
+  margin: 0 0 12px;
+}
+
+.card p,
+.admin-desc,
+.notice-box p,
+.features p {
+  margin: 0;
+  color: #526072;
+  line-height: 1.7;
+}
+
+.prototype-section {
+  max-width: 1080px;
+  margin: 28px auto 0;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.phone {
+  padding: 22px;
+  border-radius: 36px;
+  background: #111827;
+  color: white;
+  box-shadow: 0 24px 70px rgba(17, 24, 39, 0.25);
+}
+
+.phone-header {
+  display: flex;
+  justify-content: space-between;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.machine-info {
+  margin-top: 28px;
+  padding: 24px;
+  border-radius: 24px;
+  background: #1f2937;
+}
+
+.small-label {
+  margin: 0;
+  color: #93c5fd;
+  font-size: 14px;
+}
+
+.machine-info h2 {
+  margin: 10px 0;
+  font-size: 32px;
+}
+
+.status {
+  display: inline-block;
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.status.warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.timer-form {
+  margin-top: 20px;
+  padding: 24px;
+  border-radius: 24px;
+  background: white;
+  color: #172033;
+}
+
+.timer-form label {
+  display: block;
+  margin-bottom: 10px;
+  color: #334155;
+  font-weight: 700;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.input-row input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #dbe3ef;
+  border-radius: 14px;
+  font-size: 18px;
+}
+
+.input-row span {
+  color: #526072;
+  font-weight: 700;
+}
+
+.timer-form button {
+  width: 100%;
+}
+
+.result-box {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #172033;
+}
+
+.result-box p {
+  margin: 8px 0 14px;
+  color: #526072;
+}
+
+.done-button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: #10b981;
+  color: white;
+  font-weight: 800;
+}
+
+.admin-panel {
+  min-height: 100%;
+}
+
+.machine-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.machine-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px;
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #172033;
+  text-align: left;
+  border: 2px solid transparent;
+}
+
+.machine-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.machine-card strong {
+  color: #2563eb;
+}
+
+.notice-box {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #fff7ed;
+}
+
+.notice-box h3 {
+  margin: 0 0 8px;
+}
+
+.feature-section {
+  max-width: 1080px;
+  margin: 28px auto 0;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.features div {
+  padding: 20px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.features h3 {
+  margin: 0 0 8px;
+}
+
+@media (max-width: 900px) {
+  .problem-section,
+  .prototype-section,
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 36px;
+  }
+
+  .hero h1 {
+    font-size: 44px;
+  }
+}

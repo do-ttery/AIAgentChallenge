@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WashPing 프로토타입</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f4f7fb; color: #172033; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; }
+    button { border: none; cursor: pointer; font-family: inherit; }
+    .page { width: 100%; min-height: 100vh; padding: 48px 24px; }
+    .hero { max-width: 1080px; margin: 0 auto; padding: 48px; border-radius: 32px; background: linear-gradient(135deg, #eaf4ff, #ffffff); box-shadow: 0 24px 70px rgba(39, 76, 119, 0.12); }
+    .badge { display: inline-block; margin: 0 0 16px; padding: 8px 16px; border-radius: 999px; background: #dbeafe; color: #2563eb; font-size: 14px; font-weight: 700; }
+    .hero h1 { margin: 0; font-size: 56px; letter-spacing: -2px; }
+    .subtitle { max-width: 720px; margin: 14px 0 0; color: #526072; font-size: 20px; line-height: 1.6; }
+    .demo-note { max-width: 1080px; margin: 20px auto 0; padding: 16px 22px; border-radius: 16px; background: #eef4ff; border: 1px solid #cfe0ff; color: #2563eb; font-size: 15px; font-weight: 600; }
+    .prototype-section { max-width: 1080px; margin: 24px auto 0; display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
+    .phone { padding: 22px; border-radius: 36px; background: #111827; color: white; box-shadow: 0 24px 70px rgba(17, 24, 39, 0.25); }
+    .phone-header { display: flex; justify-content: space-between; color: #cbd5e1; font-size: 14px; }
+    .machine-info { margin-top: 24px; padding: 22px; border-radius: 24px; background: #1f2937; }
+    .small-label { margin: 0; color: #93c5fd; font-size: 14px; }
+    .machine-info h2 { margin: 10px 0; font-size: 30px; }
+    .status { display: inline-block; margin: 0; padding: 7px 12px; border-radius: 999px; background: #dcfce7; color: #15803d; font-size: 14px; font-weight: 700; }
+    .status.warning { background: #fef3c7; color: #b45309; }
+    .timer-form { margin-top: 18px; padding: 22px; border-radius: 24px; background: white; color: #172033; }
+    .timer-form label { display: block; margin-bottom: 10px; color: #334155; font-weight: 700; }
+    .input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .input-row input { width: 100%; padding: 14px; border: 1px solid #dbe3ef; border-radius: 14px; font-size: 18px; }
+    .input-row span { color: #526072; font-weight: 700; }
+    .timer-form button { width: 100%; padding: 14px 22px; border-radius: 14px; background: #2563eb; color: white; font-size: 16px; font-weight: 700; }
+    .result-box { margin-top: 16px; padding: 18px; border-radius: 20px; background: #eff6ff; color: #172033; display: none; }
+    .result-box p { margin: 8px 0 14px; color: #526072; }
+    .done-button { width: 100%; padding: 12px; border-radius: 12px; background: #10b981; color: white; font-weight: 800; }
+    .admin-panel { padding: 28px; border-radius: 24px; background: white; box-shadow: 0 16px 50px rgba(31, 41, 55, 0.08); }
+    .admin-panel h2 { margin: 0 0 12px; }
+    .admin-desc { margin: 0; color: #526072; line-height: 1.7; }
+    .machine-list { display: grid; gap: 12px; margin-top: 20px; }
+    .machine-card { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-radius: 18px; background: #f8fafc; color: #172033; text-align: left; border: 2px solid transparent; }
+    .machine-card.active { border-color: #2563eb; background: #eff6ff; }
+    .machine-card strong { color: #2563eb; }
+    .machine-card strong.warn { color: #b45309; }
+    .notice-box { margin-top: 20px; padding: 20px; border-radius: 18px; background: #fff7ed; }
+    .notice-box h3 { margin: 0 0 8px; }
+    .notice-box p { margin: 0; color: #526072; line-height: 1.7; }
+    .feature-section { max-width: 1080px; margin: 24px auto 0; padding: 28px; border-radius: 24px; background: white; box-shadow: 0 16px 50px rgba(31, 41, 55, 0.08); }
+    .feature-section h2 { margin: 0 0 16px; }
+    .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .features div { padding: 20px; border-radius: 18px; background: #f8fafc; }
+    .features h3 { margin: 0 0 8px; }
+    .features p { margin: 0; color: #526072; line-height: 1.6; }
+    .core-tag { display: inline-block; margin-bottom: 8px; padding: 4px 10px; border-radius: 999px; background: #dbeafe; color: #2563eb; font-size: 12px; font-weight: 700; }
+    @media (max-width: 900px) { .prototype-section, .features { grid-template-columns: 1fr; } .hero { padding: 32px; } .hero h1 { font-size: 40px; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <p class="badge">소상공인이 겪는 문제 해결</p>
+      <h1>WashPing</h1>
+      <p class="subtitle">셀프빨래방을 위한 QR 기반 세탁물 수거 알림 및 방치 방지 서비스</p>
+    </section>
+
+    <p class="demo-note">🧪 프로토타입 · 핵심 기능 2개(① 수거 알림 · ② 방치 방지)의 실제 동작을 미리 체험해 보세요. 오른쪽 점주 화면에서 기계를 눌러 선택하고, 왼쪽 폰에서 남은 시간을 입력해 알림을 설정할 수 있습니다.</p>
+
+    <section class="prototype-section">
+      <!-- 핵심 ① 수거 알림 (이용자 화면) -->
+      <div class="phone">
+        <div class="phone-header"><span>WashPing</span><span>QR 연결</span></div>
+        <div class="machine-info">
+          <p class="small-label">현재 선택된 기계</p>
+          <h2 id="machineTitle">세탁기 1번</h2>
+          <p id="machineStatus" class="status">사용 가능</p>
+        </div>
+        <form class="timer-form" id="timerForm">
+          <label for="time">기계에 표시된 남은 시간</label>
+          <div class="input-row">
+            <input id="time" type="number" min="1" placeholder="예: 38" />
+            <span>분</span>
+          </div>
+          <button type="submit">수거 알림 설정하기</button>
+        </form>
+        <div class="result-box" id="resultBox">
+          <strong>알림이 설정되었습니다.</strong>
+          <p id="resultText">약 38분 후 세탁물 수거 알림을 보내드립니다.</p>
+          <button class="done-button" onclick="markDone()">수거 완료</button>
+        </div>
+      </div>
+
+      <!-- 핵심 ② 방치 방지 (점주 관리자 화면) -->
+      <div class="admin-panel">
+        <h2>점주 관리자 화면</h2>
+        <p class="admin-desc">기계별 이용 상태, 방치 가능성을 한눈에 확인합니다.</p>
+        <div class="machine-list">
+          <button class="machine-card active" onclick="selectMachine('세탁기', 1, '사용 가능', this)"><span>세탁기 1번</span><strong>사용 가능</strong></button>
+          <button class="machine-card" onclick="selectMachine('세탁기', 2, '사용 중', this)"><span>세탁기 2번</span><strong>사용 중</strong></button>
+          <button class="machine-card" onclick="selectMachine('건조기', 3, '방치 의심', this)"><span>건조기 3번</span><strong class="warn">방치 의심</strong></button>
+        </div>
+        <div class="notice-box">
+          <h3>매장 공지</h3>
+          <p>완료된 세탁물은 다음 이용자를 위해 빠른 수거를 부탁드립니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature-section">
+      <h2>핵심 기능</h2>
+      <div class="features">
+        <div>
+          <span class="core-tag">핵심 ①</span>
+          <h3>수거 알림</h3>
+          <p>QR 스캔 → 남은 시간 입력 → 완료 시각에 웹 푸시로 수거 알림을 보냅니다.</p>
+        </div>
+        <div>
+          <span class="core-tag">핵심 ②</span>
+          <h3>방치 방지</h3>
+          <p>완료 후 일정 시간 미수거 시 점주 화면에 '방치 의심'을 표시합니다.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function selectMachine(type, id, status, button) {
+      document.getElementById('machineTitle').textContent = type + ' ' + id + '번';
+      var statusEl = document.getElementById('machineStatus');
+      statusEl.textContent = status;
+      statusEl.className = status === '방치 의심' ? 'status warning' : 'status';
+      document.getElementById('time').value = '';
+      document.getElementById('resultBox').style.display = 'none';
+      var cards = document.querySelectorAll('.machine-card');
+      for (var i = 0; i < cards.length; i++) cards[i].classList.remove('active');
+      button.classList.add('active');
+    }
+
+    document.getElementById('timerForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var time = document.getElementById('time').value;
+      if (!time) {
+        alert('기계에 표시된 남은 시간을 입력해주세요.');
+        return;
+      }
+      document.getElementById('resultText').textContent = '약 ' + time + '분 후 세탁물 수거 알림을 보내드립니다.';
+      document.getElementById('resultBox').style.display = 'block';
+    });
+
+    function markDone() {
+      alert('수거 완료로 처리되었습니다.');
+      document.getElementById('resultBox').style.display = 'none';
+      document.getElementById('time').value = '';
+    }
+  </script>
+</body>
+</html>
