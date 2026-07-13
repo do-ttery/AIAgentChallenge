@@ -37,9 +37,9 @@
 
 | 토큰 | 값 |
 |---|---|
-| Primary | #2E9CC5 |
-| Primary Dark | #1C769C |
-| Primary Light | #DDF5FB |
+| Primary | #6366F1 |
+| Primary Dark | #4338CA |
+| Primary Light | #EEF2FF |
 | Success | #4CAF50 |
 | Warning | #F4B400 |
 | Danger | #E84D4D |
@@ -56,8 +56,8 @@
 | 상태 | Hex | 비고 |
 |---|---|---|
 | 대기 | #94A3B8 | 회색 |
-| 세탁중 | #2E9CC5 | Primary와 동일 |
-| 탈수 | #7C6FD8 | 보라 |
+| 세탁중 | #6366F1 | Primary와 동일 (보라) |
+| 탈수 | #2E9CC5 | 청록 — 세탁중(보라)과 확실히 구분되는 색 |
 | 완료 | #4CAF50 | Success와 동일 |
 | 방치 | #F08C00 | Warning(#F4B400, 노랑)과 구분되는 진한 주황 |
 | 오류 | #E84D4D | 관리자 화면 전용 |
@@ -136,7 +136,7 @@ Spacing : 8 / 12 / 16 / 24 / 32 / 48 / 64
 
 | 종류 | 스타일 |
 |---|---|
-| Primary | Filled (#2E9CC5) |
+| Primary | Filled (#6366F1) |
 | Secondary | Outlined |
 | Ghost | Text Only |
 | Danger | Red Filled — **관리자 화면 전용** |

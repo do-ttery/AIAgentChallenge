@@ -213,15 +213,15 @@ IDLE / RUNNING / SPIN / DONE / COLLECTED / ABANDONED
 Pretendard
 8pt Grid
 Radius 24 (카드) / 18 (버튼)
-Primary #2E9CC5
+Primary #6366F1
 
 상태 색 (고정)
 
 | 상태 | 색 |
 |---|---|
 | 대기 | #94A3B8 |
-| 세탁중 | #2E9CC5 |
-| 탈수 | #7C6FD8 |
+| 세탁중 | #6366F1 |
+| 탈수 | #2E9CC5 |
 | 완료 | #4CAF50 |
 | 방치 | #F08C00 |
 | 오류 | #E84D4D |

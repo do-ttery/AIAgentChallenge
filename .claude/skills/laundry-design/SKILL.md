@@ -49,7 +49,7 @@ AI는 친근하지만
 
 | 용도 | Hex |
 |---|---|
-| Primary | #2E9CC5 |
+| Primary | #6366F1 |
 | Background | #F8FAFC |
 | Card | #FFFFFF |
 | Success | #4CAF50 |
@@ -61,8 +61,8 @@ AI는 친근하지만
 | 상태 | Hex |
 |---|---|
 | 대기 | #94A3B8 |
-| 세탁중 | #2E9CC5 |
-| 탈수 | #7C6FD8 |
+| 세탁중 | #6366F1 |
+| 탈수 | #2E9CC5 |
 | 완료 | #4CAF50 |
 | 방치 | #F08C00 |
 | 오류 | #E84D4D (관리자 화면만) |
