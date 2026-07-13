@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>안개 걷기 에이전트 — 프로토타입</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    background: #0f1420; color: #e8ecf4; line-height: 1.6;
+  }
+  a { text-decoration: none; color: inherit; }
+
+  /* ---- 화면 전환: 순수 CSS (:target) ---- */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen:target { display: flex; }
+  body:not(:has(.screen:target)) #o1 { display: flex; }
+
+  /* ---- 공통 ---- */
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 10px; }
+  .sub { color: #8b94a7; font-size: 15px; }
+  .btn {
+    display: inline-block; margin-top: 28px; padding: 13px 34px;
+    background: #4f7cff; color: #fff; border-radius: 10px; font-size: 15px; font-weight: 600;
+  }
+  .btn:hover { background: #6b90ff; }
+  .btn-ghost { background: transparent; border: 1px solid #3a4356; color: #aeb6c6; }
+  .btn-ghost:hover { border-color: #6b90ff; color: #e8ecf4; }
+  .dots { margin-top: 40px; color: #4a5468; font-size: 20px; letter-spacing: 8px; }
+  .dots b { color: #4f7cff; }
+
+  /* ---- 상단 바 ---- */
+  .topbar {
+    display: flex; align-items: center; gap: 20px;
+    padding: 14px 28px; background: #141a2a; border-bottom: 1px solid #232c40;
+  }
+  .logo { font-weight: 700; font-size: 15px; }
+  .logo span { color: #4f7cff; }
+  .gauge-wrap { flex: 1; display: flex; align-items: center; gap: 12px; max-width: 420px; }
+  .gauge-label { font-size: 13px; color: #8b94a7; white-space: nowrap; }
+  .gauge { flex: 1; height: 8px; background: #232c40; border-radius: 4px; overflow: hidden; }
+  .gauge > div { height: 100%; background: linear-gradient(90deg, #4f7cff, #7fd4ff); border-radius: 4px; }
+  .gear { margin-left: auto; color: #5a6478; font-size: 18px; }
+
+  /* ---- 온보딩 일러스트 ---- */
+  .fog-art {
+    width: 220px; height: 130px; border-radius: 14px; margin-bottom: 30px;
+    background: repeating-linear-gradient(180deg, #1c2436 0 14px, #232c40 14px 16px);
+    position: relative; overflow: hidden; border: 1px solid #2a3348;
+  }
+  .fog-art::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 30%, rgba(190,205,230,0.28) 55%, rgba(190,205,230,0.45) 100%);
+  }
+  .flow3 { display: flex; gap: 16px; align-items: center; margin: 30px 0 6px; font-size: 15px; }
+  .flow3 .box { padding: 14px 18px; background: #1a2133; border: 1px solid #2a3348; border-radius: 12px; }
+  .flow3 .arrow { color: #4f7cff; font-size: 18px; }
+
+  /* ---- 드롭존 ---- */
+  .dropzone {
+    width: 340px; padding: 44px 20px; margin: 26px 0 8px;
+    border: 2px dashed #3a4356; border-radius: 16px; color: #8b94a7; font-size: 15px;
+  }
+
+  /* ---- 스캔 로딩 ---- */
+  .scan-fog { display: flex; gap: 8px; margin-bottom: 30px; }
+  .scan-fog i {
+    width: 34px; height: 34px; border-radius: 8px; background: #2a3348; display: block;
+    animation: clear 2.2s infinite;
+  }
+  .scan-fog i:nth-child(2) { animation-delay: .3s; }
+  .scan-fog i:nth-child(3) { animation-delay: .6s; }
+  .scan-fog i:nth-child(4) { animation-delay: .9s; }
+  .scan-fog i:nth-child(5) { animation-delay: 1.2s; }
+  @keyframes clear { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+
+  /* ---- 지도 ---- */
+  .briefing {
+    margin: 20px 28px 0; padding: 11px 18px; border-radius: 10px; font-size: 14px;
+    background: #1c2436; border: 1px solid #2f3b56; color: #aeb6c6;
+  }
+  .briefing b { color: #7fd4ff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; padding: 24px 28px; }
+  .tile {
+    position: relative; padding: 22px 18px; border-radius: 14px; overflow: hidden;
+    background: #1a2133; border: 1px solid #2a3348; display: block;
+  }
+  .tile .name { font-family: monospace; font-size: 15px; margin-bottom: 6px; }
+  .tile .state { font-size: 13px; color: #8b94a7; }
+  .tile.clear { border-color: #2e4d3a; }
+  .tile.clear .state { color: #6fce93; }
+  .tile.fog { border-color: #3a4356; }
+  .tile.fog::after {
+    content: "?"; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 18px;
+    font-size: 26px; color: rgba(210,220,240,0.55);
+    background: linear-gradient(100deg, rgba(150,165,195,0.06) 40%, rgba(190,205,230,0.22));
+  }
+  .tile.fog:hover { border-color: #4f7cff; }
+
+  /* ---- 파일 목록 ---- */
+  .list { padding: 22px 28px; display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+  .row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px; background: #1a2133; border: 1px solid #2a3348; border-radius: 12px;
+  }
+  .row .file { font-family: monospace; font-size: 14px; flex: 1; }
+  .row .meta { font-size: 12.5px; color: #8b94a7; }
+  .row .go { padding: 8px 16px; background: #4f7cff; border-radius: 8px; font-size: 13px; font-weight: 600; color: #fff; }
+  .row.done { opacity: .65; }
+  .row .ok { color: #6fce93; }
+  .backlink { padding: 18px 28px 0; font-size: 14px; color: #8b94a7; display: block; }
+  .backlink:hover { color: #e8ecf4; }
+  .pagetitle { padding: 6px 28px 0; font-size: 19px; font-weight: 700; }
+  .pagetitle small { color: #8b94a7; font-weight: 400; font-size: 14px; margin-left: 8px; }
+
+  /* ---- 탐험 ---- */
+  .explore { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; padding: 22px 28px; }
+  .code, .card { border-radius: 12px; padding: 20px; border: 1px solid #2a3348; }
+  .code { background: #12172233; background: #121722; font-family: monospace; font-size: 13px; color: #aeb6c6; white-space: pre; overflow-x: auto; }
+  .code em { color: #7fd4ff; font-style: normal; }
+  .card { background: #1a2133; }
+  .card h3 { font-size: 14px; color: #7fd4ff; margin-bottom: 10px; }
+  .card p { font-size: 14px; color: #c6cdda; }
+  .quiz { margin: 0 28px 26px; padding: 22px; background: #1a2133; border: 1px solid #2a3348; border-radius: 12px; max-width: 900px; }
+  .quiz h3 { font-size: 15px; margin-bottom: 14px; }
+  .opt {
+    display: block; padding: 13px 16px; margin-bottom: 10px; border-radius: 10px;
+    border: 1px solid #2f3b56; font-size: 14px; color: #c6cdda;
+  }
+  .opt:hover { border-color: #4f7cff; background: #1e2740; }
+  .explain {
+    margin-top: 14px; padding: 16px; border-radius: 10px; font-size: 14px;
+    background: #2b1e24; border: 1px solid #6e3a4a; color: #e8b4c0;
+  }
+  .explain b { color: #ff9db1; }
+  .opt.wrongpick { border-color: #6e3a4a; background: #2b1e24; color: #e8b4c0; }
+
+  /* ---- 걷힘 완료 ---- */
+  .cleartile {
+    width: 210px; padding: 24px; margin-bottom: 26px; border-radius: 14px;
+    background: #1a2b22; border: 1px solid #3a6a4c; font-family: monospace; font-size: 14px; color: #8fe0ac;
+  }
+  .rise { margin-top: 14px; font-size: 17px; }
+  .rise b { color: #7fd4ff; font-size: 22px; }
+  .btnrow { display: flex; gap: 12px; margin-top: 26px; }
+</style>
+</head>
+<body>
+
+<!-- O1 온보딩 1: 문제 공감 -->
+<section class="screen" id="o1">
+  <div class="center">
+    <div class="fog-art"></div>
+    <h1>화면은 잘 돌아가요.<br>근데 이 코드, 설명할 수 있나요?</h1>
+    <p class="sub">AI가 짠 코드는 에러 없이, 조용히 쌓입니다.</p>
+    <a class="btn" href="#o2">다음 →</a>
+    <div class="dots"><b>●</b> ○ ○</div>
+  </div>
+</section>
+
+<!-- O2 온보딩 2: 원리 -->
+<section class="screen" id="o2">
+  <div class="center">
+    <h1>추측하지 않아요. 기록을 읽어요.</h1>
+    <div class="flow3">
+      <span class="box">AI 세션 로그</span><span class="arrow">+</span>
+      <span class="box">git 이력</span><span class="arrow">→</span>
+      <span class="box">🗺 안개 지도</span>
+    </div>
+    <p class="sub">AI가 쓴 코드 중, 당신이 한 번도 만지지 않은 곳을 찾아냅니다.</p>
+    <a class="btn" href="#o3">다음 →</a>
+    <div class="dots">○ <b>●</b> ○</div>
+  </div>
+</section>
+
+<!-- O3 온보딩 3: 폴더 선택 -->
+<section class="screen" id="o3">
+  <div class="center">
+    <h1>당신의 프로젝트,<br>몇 %가 안개일까요?</h1>
+    <div class="dropzone">📁 여기로 프로젝트 폴더를 끌어오세요</div>
+    <a class="btn" href="#s1">프로젝트 폴더 선택</a>
+    <p class="sub" style="margin-top:16px">코드는 컴퓨터 밖으로 나가지 않아요.</p>
+    <div class="dots">○ ○ <b>●</b></div>
+  </div>
+</section>
+
+<!-- S1 스캔 중 -->
+<section class="screen" id="s1">
+  <div class="center">
+    <div class="scan-fog"><i></i><i></i><i></i><i></i><i></i></div>
+    <h1>지도를 그리는 중...</h1>
+    <p class="sub">커밋 128개 · 세션 로그 14개 분석</p>
+    <a class="btn" href="#s2">지도 보기</a>
+  </div>
+</section>
+
+<!-- S2 안개 지도 (장악률 71%) -->
+<section class="screen" id="s2">
+  <div class="topbar">
+    <a class="logo" href="#s2">FOG<span>LIFT</span></a>
+    <div class="gauge-wrap">
+      <span class="gauge-label">장악률 71%</span>
+      <div class="gauge"><div style="width:71%"></div></div>
+    </div>
+    <span class="gear">⚙</span>
+  </div>
+  <div class="briefing">🌫 지난 세션 이후 안개가 <b>+3칸</b> 늘었어요 — auth/에 몰려 있어요</div>
+  <div class="grid">
+    <span class="tile clear"><span class="name">src/</span><span class="state">✓ 밝음</span></span>
+    <a class="tile fog" href="#s3"><span class="name">auth/</span><span class="state">안개 80%</span></a>
+    <span class="tile fog" style="pointer-events:none"><span class="name">api/</span><span class="state">안개 40%</span></span>
+    <span class="tile clear"><span class="name">utils/</span><span class="state">✓ 밝음</span></span>
+    <span class="tile fog" style="pointer-events:none"><span class="name">db/</span><span class="state">안개 60%</span></span>
+  </div>
+</section>
+
+<!-- S3 모듈 파일 목록 -->
+<section class="screen" id="s3">
+  <div class="topbar">
+    <a class="logo" href="#s2">FOG<span>LIFT</span></a>
+    <div class="gauge-wrap">
+      <span class="gauge-label">장악률 71%</span>
+      <div class="gauge"><div style="width:71%"></div></div>
+    </div>
+    <span class="gear">⚙</span>
+  </div>
+  <a class="backlink" href="#s2">← 지도로</a>
+  <div class="pagetitle">auth/ <small>안개 80% · 파일 3개</small></div>
+  <div class="list">
+    <div class="row">
+      <span>❓</span><span class="file">auth/login.py</span>
+      <span class="meta">AI 작성 7/2 · 접촉 없음</span>
+      <a class="go" href="#s4">탐험 시작</a>
+    </div>
+    <div class="row">
+      <span>❓</span><span class="file">auth/token.py</span>
+      <span class="meta">AI 작성 7/3 · 접촉 없음</span>
+      <a class="go" href="#s4">탐험 시작</a>
+    </div>
+    <div class="row done">
+      <span class="ok">✓</span><span class="file">auth/config.py</span>
+      <span class="meta">직접 수정 7/5 · 밝음</span>
+    </div>
+  </div>
+</section>
+
+<!-- S4 탐험: 요약 + 퀴즈 -->
+<section class="screen" id="s4">
+  <div class="topbar">
+    <a class="logo" href="#s2">FOG<span>LIFT</span></a>
+    <div class="gauge-wrap">
+      <span class="gauge-label">장악률 71%</span>
+      <div class="gauge"><div style="width:71%"></div></div>
+    </div>
+    <span class="gear">⚙</span>
+  </div>
+  <a class="backlink" href="#s3">← 목록으로</a>
+  <div class="pagetitle">auth/login.py 탐험 중 <small>퀴즈 1/1</small></div>
+  <div class="explore">
+    <div class="code">def login(request):
+    creds = parse(request)
+    user = db.find_user(creds.id)
+    <em>token = jwt.encode(</em>
+    <em>    {"sub": user.id, "exp": now()+3600},</em>
+    <em>    SECRET, algorithm="HS256")</em>
+    return {"token": token}</div>
+    <div class="card">
+      <h3>이 코드는</h3>
+      <p>아이디·비밀번호를 확인한 뒤 <b>JWT 토큰</b>을 발급합니다.
+      토큰에는 사용자 ID와 <b>만료 시각(1시간)</b>이 담기고,
+      서버 비밀키로 서명해 위조를 막습니다.</p>
+    </div>
+  </div>
+  <div class="quiz">
+    <h3>Q. 발급된 토큰이 만료되면, 이 코드 기준으로 무슨 일이 일어날까요?</h3>
+    <a class="opt" href="#s4w">토큰이 자동으로 갱신된다</a>
+    <a class="opt" href="#s5">이 코드는 발급만 한다 — 만료 처리는 검증하는 쪽의 몫이다</a>
+    <a class="opt" href="#s4w">사용자가 자동 로그아웃된다</a>
+  </div>
+</section>
+
+<!-- S4W 탐험: 오답 해설 -->
+<section class="screen" id="s4w">
+  <div class="topbar">
+    <a class="logo" href="#s2">FOG<span>LIFT</span></a>
+    <div class="gauge-wrap">
+      <span class="gauge-label">장악률 71%</span>
+      <div class="gauge"><div style="width:71%"></div></div>
+    </div>
+    <span class="gear">⚙</span>
+  </div>
+  <a class="backlink" href="#s3">← 목록으로</a>
+  <div class="pagetitle">auth/login.py 탐험 중 <small>퀴즈 1/1 · 오답</small></div>
+  <div class="explore">
+    <div class="code">def login(request):
+    creds = parse(request)
+    user = db.find_user(creds.id)
+    <em>token = jwt.encode(</em>
+    <em>    {"sub": user.id, "exp": now()+3600},</em>
+    <em>    SECRET, algorithm="HS256")</em>
+    return {"token": token}</div>
+    <div class="card">
+      <h3>이 코드는</h3>
+      <p>아이디·비밀번호를 확인한 뒤 <b>JWT 토큰</b>을 발급합니다.
+      토큰에는 사용자 ID와 <b>만료 시각(1시간)</b>이 담기고,
+      서버 비밀키로 서명해 위조를 막습니다.</p>
+    </div>
+  </div>
+  <div class="quiz">
+    <h3>Q. 발급된 토큰이 만료되면, 이 코드 기준으로 무슨 일이 일어날까요?</h3>
+    <span class="opt wrongpick">토큰이 자동으로 갱신된다 ✗</span>
+    <div class="explain">
+      <b>아까워요.</b> 이 함수는 만료 시각을 토큰에 <b>적어둘 뿐</b>, 갱신 로직은 없어요.
+      만료된 토큰을 거부하는 건 이 코드가 아니라 <b>검증하는 쪽(token.py)</b>의 일이에요 —
+      그래서 token.py가 다음 탐험지예요.
+    </div>
+    <a class="btn btn-ghost" href="#s4" style="margin-top:16px">다시 도전</a>
+  </div>
+</section>
+
+<!-- S5 걷힘 완료 -->
+<section class="screen" id="s5">
+  <div class="center">
+    <div class="cleartile">✨ auth/login.py<br><span style="color:#6fce93">안개 걷힘</span></div>
+    <h1>안개 한 칸을 걷었어요</h1>
+    <p class="rise">장악률 71% → <b>74%</b> ▲</p>
+    <div class="btnrow">
+      <a class="btn btn-ghost" href="#s3">계속 탐험하기</a>
+      <a class="btn" href="#s2b">지도로 돌아가기</a>
+    </div>
+  </div>
+</section>
+
+<!-- S2B 안개 지도 (갱신: 74%) -->
+<section class="screen" id="s2b">
+  <div class="topbar">
+    <a class="logo" href="#s2b">FOG<span>LIFT</span></a>
+    <div class="gauge-wrap">
+      <span class="gauge-label">장악률 74%</span>
+      <div class="gauge"><div style="width:74%"></div></div>
+    </div>
+    <span class="gear">⚙</span>
+  </div>
+  <div class="briefing">✨ 방금 <b>auth/login.py</b>의 안개를 걷었어요 — auth/ 안개 80% → 53%</div>
+  <div class="grid">
+    <span class="tile clear"><span class="name">src/</span><span class="state">✓ 밝음</span></span>
+    <a class="tile fog" href="#s3"><span class="name">auth/</span><span class="state">안개 53% ↓</span></a>
+    <span class="tile fog" style="pointer-events:none"><span class="name">api/</span><span class="state">안개 40%</span></span>
+    <span class="tile clear"><span class="name">utils/</span><span class="state">✓ 밝음</span></span>
+    <span class="tile fog" style="pointer-events:none"><span class="name">db/</span><span class="state">안개 60%</span></span>
+  </div>
+</section>
+
+</body>
+</html>
