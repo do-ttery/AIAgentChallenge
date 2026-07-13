@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# 비밀키 · 로컬 DB (커밋 금지)
+.env
+.env.*
+!.env.example
+server/data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

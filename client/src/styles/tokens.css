@@ -1,0 +1,65 @@
+/* 빨래집사 디자인 토큰 — 원본: .claude/skills/laundry-design/design-system.md
+   값을 바꾸려면 design-system.md를 먼저 고치고 여기에 반영한다. */
+
+:root {
+  /* Color */
+  --color-primary: #6366f1;
+  --color-primary-dark: #4338ca;
+  --color-primary-light: #eef2ff;
+  --color-success: #4caf50;
+  --color-warning: #f4b400;
+  --color-warning-light: #fffbeb;
+  --color-danger: #e84d4d;
+  --color-bg: #f8fafc;
+  --color-card: #ffffff;
+  --color-text: #1e293b;
+  --color-text-sub: #64748b;
+  --color-border: #e2e8f0;
+
+  /* 상태 색 (고정) */
+  --state-idle: #94a3b8;
+  --state-running: #6366f1;
+  --state-spin: #2e9cc5;
+  --state-done: #4caf50;
+  --state-abandoned: #f08c00;
+  --state-error: #e84d4d;
+
+  /* Typography */
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --text-display: 32px;
+  --text-title: 28px;
+  --text-heading: 24px;
+  --text-subtitle: 20px;
+  --text-body: 16px;
+  --text-caption: 14px;
+  --text-small: 12px;
+
+  /* Radius */
+  --radius-card: 24px;
+  --radius-button: 18px;
+  --radius-input: 16px;
+  --radius-badge: 999px;
+
+  /* Shadow */
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-floating: 0 12px 32px rgba(0, 0, 0, 0.12);
+
+  /* Spacing — 8pt Grid */
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
