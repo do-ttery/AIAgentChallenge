@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>무인빨래방 AI 점장 에이전트 — 웹 프로토타입 (순수 HTML/CSS)</title>
+<title>빨래집사 — 인터랙티브 프로토타입</title>
 <style>
   :root {
     --ink: #1f2937;
@@ -14,314 +14,674 @@
     --accent-soft: #eef2ff;
     --warn: #d97706;
     --warn-soft: #fff7ed;
+    --warn-line: #fdba74;
     --ok: #059669;
     --ok-soft: #ecfdf5;
-    --bg: #f3f4f6;
+    --bg: #eef0f4;
   }
-  * { box-sizing: border-box; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg);
     font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
     color: var(--ink);
     line-height: 1.55;
-    padding: 40px 24px 64px;
+    min-height: 100vh;
   }
+  button { font-family: inherit; cursor: pointer; }
 
-  /* ── 보드 헤더 ─────────────────────────── */
-  .board-head { max-width: 1040px; margin: 0 auto 36px; }
-  .board-head .tag {
-    display: inline-block; padding: 4px 12px; border-radius: 999px;
-    background: var(--accent-soft); color: var(--accent-dark);
-    font-size: 13px; font-weight: 600; margin-bottom: 10px;
+  /* ═══════ 상단 모드 스위처 ═══════ */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 22px; background: #fff; border-bottom: 1px solid var(--line);
   }
-  .board-head h1 { font-size: 24px; font-weight: 800; }
-  .board-head p { color: var(--sub); font-size: 14px; margin-top: 6px; }
+  .topbar .title { font-weight: 800; font-size: 15px; }
+  .topbar .title small { display: block; font-weight: 500; font-size: 11.5px; color: var(--sub); }
+  .mode-switch { display: flex; background: var(--bg); border-radius: 999px; padding: 4px; gap: 2px; }
+  .mode-switch button {
+    border: none; background: transparent; border-radius: 999px;
+    padding: 8px 22px; font-size: 13.5px; font-weight: 700; color: var(--sub);
+    transition: all .15s;
+  }
+  .mode-switch button.on { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,.35); }
 
-  .screen-label { max-width: 1040px; margin: 48px auto 12px; }
-  .screen-label b { font-size: 16px; }
-  .screen-label span { display: block; font-size: 13px; color: var(--sub); }
+  .mode-view { display: none; }
+  .mode-view.on { display: block; }
 
-  /* ── 브라우저 프레임 ───────────────────── */
-  .browser {
-    max-width: 1040px; margin: 0 auto;
-    border: 1px solid var(--line); border-radius: 12px;
-    background: #fff; overflow: hidden;
-    box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  /* ═══════ 사용자 모드 — 폰 프레임 ═══════ */
+  .user-wrap {
+    display: flex; flex-wrap: wrap; gap: 36px; justify-content: center; align-items: flex-start;
+    padding: 36px 20px 80px;
   }
-  .chrome {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; background: #fafafa;
-    border-bottom: 1px solid var(--line);
+  .scenario-panel { width: 260px; padding-top: 8px; }
+  .scenario-panel h3 { font-size: 13px; font-weight: 800; color: var(--sub); letter-spacing: .06em; margin-bottom: 12px; }
+  .scenario-panel .sc {
+    display: block; width: 100%; text-align: left;
+    border: 1px solid var(--line); background: #fff; border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 8px; transition: all .12s;
   }
-  .dots { display: flex; gap: 6px; }
-  .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
-  .dots i:nth-child(1) { background: #d1d5db; }
-  .dots i:nth-child(2) { background: #d1d5db; }
-  .dots i:nth-child(3) { background: #d1d5db; }
-  .urlbar {
-    flex: 1; padding: 6px 14px; border-radius: 999px;
-    background: #fff; border: 1px solid var(--line);
-    font-size: 12.5px; color: var(--sub);
+  .scenario-panel .sc b { display: block; font-size: 13.5px; }
+  .scenario-panel .sc span { font-size: 11.5px; color: var(--sub); }
+  .scenario-panel .sc.on { border-color: var(--accent); background: var(--accent-soft); }
+  .scenario-panel .sc.on b { color: var(--accent-dark); }
+  .scenario-note { font-size: 11.5px; color: var(--sub); margin-top: 14px; padding: 0 2px; }
+  .flow-strip {
+    margin-top: 18px; background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; font-size: 11px; color: var(--sub); line-height: 1.8;
   }
+  .flow-strip b { color: var(--accent-dark); }
 
-  /* ── 공통 웹 페이지 요소 ───────────────── */
-  .nav {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 14px 32px; border-bottom: 1px solid var(--line);
+  .phone {
+    width: 375px; height: 740px; background: #111827; border-radius: 46px;
+    padding: 10px; box-shadow: 0 24px 60px rgba(17,24,39,.28);
+    position: relative; flex-shrink: 0;
   }
-  .nav .logo { font-weight: 800; font-size: 16px; color: var(--accent-dark); }
-  .nav .right { font-size: 13px; color: var(--sub); }
+  .phone .screen {
+    width: 100%; height: 100%; background: #f8f9fc; border-radius: 38px;
+    overflow: hidden; position: relative; display: flex; flex-direction: column;
+  }
+  .statusbar {
+    height: 44px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 26px; font-size: 13px; font-weight: 700; flex-shrink: 0;
+    position: relative; z-index: 5;
+  }
+  .notch {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 118px; height: 28px; background: #111827; border-radius: 999px; z-index: 6;
+  }
+  .home-indicator {
+    position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+    width: 128px; height: 5px; border-radius: 999px; background: rgba(17,24,39,.25); z-index: 6;
+  }
+  .app-body { flex: 1; overflow-y: auto; padding: 6px 20px 46px; }
+  .app-head { padding: 6px 2px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .app-head .logo { font-weight: 800; font-size: 15px; color: var(--accent-dark); }
+  .app-head .store { font-size: 12px; color: var(--sub); }
+
+  .u-screen { display: none; }
+  .u-screen.on { display: block; animation: fadein .25s; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none;} }
 
   .badge {
-    display: inline-block; padding: 3px 10px; border-radius: 999px;
-    font-size: 12px; font-weight: 700; vertical-align: middle;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
   }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .badge.run  { background: var(--accent-soft); color: var(--accent-dark); }
   .badge.done { background: var(--ok-soft); color: var(--ok); }
   .badge.warn { background: var(--warn-soft); color: var(--warn); }
   .badge.idle { background: #f3f4f6; color: var(--sub); }
+  .badge .dot.pulse { animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+  .hero-card {
+    background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%);
+    border-radius: 20px; padding: 22px 20px; color: #fff;
+    box-shadow: 0 10px 24px rgba(99,102,241,.3); margin-bottom: 16px;
+  }
+  .hero-card .machine-no { font-size: 13px; opacity: .85; }
+  .hero-card .machine-name { font-size: 26px; font-weight: 800; margin-top: 1px; }
+  .hero-card .detect {
+    margin-top: 14px; background: rgba(255,255,255,.16); border-radius: 12px;
+    padding: 10px 13px; font-size: 12.5px; display: flex; gap: 8px; align-items: center;
+  }
 
   .btn {
-    display: inline-block; padding: 13px 28px; border-radius: 12px;
-    text-align: center; font-size: 15px; font-weight: 700;
-    border: none; text-decoration: none; cursor: pointer;
+    display: block; width: 100%; padding: 15px; border-radius: 14px;
+    text-align: center; font-size: 15px; font-weight: 700; border: none;
+    transition: transform .08s;
   }
-  .btn.primary { background: var(--accent); color: #fff; }
-  .btn.block { display: block; width: 100%; }
+  .btn:active { transform: scale(.98); }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: 0 6px 16px rgba(99,102,241,.3); }
+  .btn.ghost { background: #fff; border: 1.5px solid var(--line); color: var(--ink); }
+  .btn + .btn { margin-top: 10px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+  .fineprint { font-size: 11.5px; color: var(--sub); text-align: center; margin-top: 12px; }
 
-  /* ── ① / ② 고객 페이지 (센터 카드형) ──── */
-  .page-center { padding: 48px 24px 64px; background: linear-gradient(#fff, #fafaff); }
-  .card {
-    max-width: 460px; margin: 0 auto; padding: 32px;
-    border: 1px solid var(--line); border-radius: 16px; background: #fff;
-    box-shadow: 0 4px 20px rgba(0,0,0,.05);
+  .white-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 18px;
+    padding: 20px; margin-bottom: 14px; box-shadow: 0 3px 14px rgba(0,0,0,.04);
   }
-  .card h2 { font-size: 21px; font-weight: 800; }
-  .card .sub { font-size: 13.5px; color: var(--sub); margin-top: 3px; }
 
-  .machine-hero {
-    margin: 20px 0; padding: 22px; border-radius: 14px;
-    background: var(--accent-soft); text-align: center;
+  .butler-tip {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--accent-soft); border-radius: 14px; padding: 12px 14px;
+    font-size: 12.5px; color: var(--accent-dark); margin-bottom: 14px;
   }
-  .machine-hero .no { font-size: 32px; font-weight: 800; color: var(--accent-dark); }
-  .machine-hero .st { font-size: 13.5px; color: #4b5563; margin-top: 6px; }
+  .butler-tip .cat { font-size: 20px; line-height: 1.2; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 20px; }
-  .chip {
-    padding: 8px 14px; border-radius: 999px; font-size: 13.5px;
-    border: 1px solid var(--line); background: #fafafa;
+  .eta-block { text-align: center; padding: 8px 0 4px; }
+  .eta-block .lbl { font-size: 12px; color: var(--sub); }
+  .eta-block .time { font-size: 38px; font-weight: 800; letter-spacing: -1px; margin-top: 2px; }
+  .eta-block .range {
+    display: inline-block; margin-top: 6px; font-size: 12.5px; font-weight: 700;
+    color: var(--accent-dark); background: var(--accent-soft);
+    padding: 4px 12px; border-radius: 999px;
   }
-  .chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; }
-  .hint { font-size: 12.5px; color: var(--sub); text-align: center; margin-top: 12px; }
-
-  .eta { text-align: center; margin: 22px 0 8px; }
-  .eta .time { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
-  .eta .range { font-size: 13px; color: var(--sub); margin-top: 2px; }
-  .progress {
-    height: 9px; border-radius: 999px; background: #e5e7eb;
-    margin: 18px 0 8px; overflow: hidden;
+  .progress { height: 10px; border-radius: 999px; background: #e9eaf0; margin: 20px 0 10px; overflow: hidden; }
+  .progress > div {
+    height: 100%; border-radius: 999px; width: 62%;
+    background: linear-gradient(90deg, var(--accent), #818cf8);
+    transition: width 1s linear;
   }
-  .progress > div { height: 100%; width: 62%; border-radius: 999px; background: var(--accent); }
-  .steps { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
+  .steps { display: flex; justify-content: space-between; font-size: 11.5px; color: #9ca3af; }
+  .steps span { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .steps i { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; font-style: normal; }
   .steps .on { color: var(--accent-dark); font-weight: 700; }
-  .notify-card {
-    margin-top: 20px; padding: 14px 16px; border-radius: 12px;
-    background: var(--ok-soft); font-size: 13.5px; color: #065f46;
+  .steps .on i { background: var(--accent); }
+
+  .info-tile {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: var(--ok-soft); border-radius: 14px; padding: 13px 15px;
+    font-size: 12.5px; color: #065f46;
+  }
+  .info-tile.warn { background: var(--warn-soft); color: #92400e; }
+  .info-tile .ico { font-size: 17px; line-height: 1.2; }
+
+  .push {
+    position: absolute; top: 52px; left: 14px; right: 14px; z-index: 40;
+    background: rgba(249,250,251,.97); backdrop-filter: blur(8px);
+    border-radius: 16px; padding: 12px 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    display: flex; gap: 11px; align-items: flex-start;
+    transform: translateY(-130px); transition: transform .4s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .push.show { transform: translateY(0); }
+  .push .appicon {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+  }
+  .push .txt b { font-size: 12.5px; display: block; }
+  .push .txt p { font-size: 12px; color: #374151; }
+  .push .when { margin-left: auto; font-size: 10.5px; color: var(--sub); flex-shrink: 0; }
+
+  .done-hero { text-align: center; padding: 14px 0 6px; }
+  .done-hero .big { font-size: 52px; }
+  .done-hero h2 { font-size: 21px; font-weight: 800; margin-top: 6px; }
+  .done-hero p { font-size: 13px; color: var(--sub); margin-top: 3px; }
+  .timer-chip {
+    display: inline-block; margin-top: 10px; font-size: 12.5px; font-weight: 700;
+    background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 5px 14px;
   }
 
-  /* ── ③ 사장님 대시보드 (사이드바형) ────── */
-  .dash { display: flex; min-height: 520px; }
+  .shelf-guide { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .shelf-step { display: flex; gap: 12px; align-items: center; font-size: 13px; }
+  .shelf-step .n {
+    width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+    background: var(--accent-soft); color: var(--accent-dark);
+    font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ═══════ 점주 모드 ═══════ */
+  .owner-wrap { padding: 28px 26px 80px; max-width: 1180px; margin: 0 auto; }
+  .owner-frame {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,.08);
+    display: flex; min-height: 640px;
+  }
   .side {
-    width: 200px; border-right: 1px solid var(--line);
-    padding: 24px 0; background: #fafafa; flex-shrink: 0;
+    width: 208px; border-right: 1px solid var(--line); background: #fafbfc;
+    padding: 22px 0; flex-shrink: 0; display: flex; flex-direction: column;
   }
+  .side .brand { padding: 0 24px 18px; font-weight: 800; font-size: 15px; color: var(--accent-dark); }
+  .side .brand small { display: block; font-size: 11px; color: var(--sub); font-weight: 500; }
   .side .item {
-    padding: 11px 24px; font-size: 14px; color: var(--sub);
+    padding: 11px 24px; font-size: 13.5px; color: var(--sub); border: none;
+    background: transparent; text-align: left; display: flex; gap: 9px; align-items: center;
   }
-  .side .item.on {
-    color: var(--accent-dark); font-weight: 700;
-    background: var(--accent-soft); border-right: 3px solid var(--accent);
+  .side .item.on { color: var(--accent-dark); font-weight: 700; background: var(--accent-soft); border-right: 3px solid var(--accent); }
+  .side .agent-status {
+    margin-top: auto; margin-left: 20px; margin-right: 20px;
+    background: var(--ok-soft); border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #065f46;
   }
-  .main { flex: 1; padding: 28px 32px; }
-  .main h2 { font-size: 20px; font-weight: 800; }
-  .main .sub { font-size: 13.5px; color: var(--sub); margin-top: 3px; }
+  .side .agent-status b { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+  .side .agent-status b::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); animation: pulse 1.6s infinite; }
 
-  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
-  .stat {
-    border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  .o-main { flex: 1; padding: 26px 30px; overflow-y: auto; }
+  .o-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .o-head h2 { font-size: 19px; font-weight: 800; }
+  .o-head .sub { font-size: 12.5px; color: var(--sub); margin-top: 2px; }
+  .o-head .right { text-align: right; font-size: 12.5px; color: var(--sub); }
+
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .stat { border: 1px solid var(--line); border-radius: 13px; padding: 13px 16px; background: #fff; }
+  .stat .k { font-size: 11.5px; color: var(--sub); }
+  .stat .v { font-size: 23px; font-weight: 800; margin-top: 1px; }
+  .stat .note { font-size: 11px; color: var(--sub); margin-top: 1px; }
+  .stat.warn-stat { border-color: var(--warn-line); background: var(--warn-soft); }
+  .stat.warn-stat .v { color: var(--warn); }
+
+  .grid-title { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 10px; }
+  .grid-title h3 { font-size: 13px; font-weight: 800; color: var(--sub); letter-spacing: .05em; }
+  .grid-title span { font-size: 11.5px; color: var(--sub); }
+  .m-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .m-card { border: 1px solid var(--line); border-radius: 14px; padding: 15px 16px; background: #fff; }
+  .m-card.alert { border-color: var(--warn-line); background: var(--warn-soft); }
+  .m-card .top { display: flex; justify-content: space-between; align-items: center; }
+  .m-card .name { font-size: 13.5px; font-weight: 800; }
+  .m-card .meta { font-size: 12px; color: var(--sub); margin-top: 9px; line-height: 1.5; }
+  .m-card .meta b { color: var(--ink); }
+  .m-card .mini-bar { height: 5px; border-radius: 999px; background: #e9eaf0; margin-top: 10px; overflow: hidden; }
+  .m-card .mini-bar > div { height: 100%; background: var(--accent); border-radius: 999px; }
+  .m-card .no-contact {
+    display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700;
+    color: var(--warn); background: #fff; border: 1px solid var(--warn-line);
+    border-radius: 999px; padding: 2px 9px;
   }
-  .stat .k { font-size: 12.5px; color: var(--sub); }
-  .stat .v { font-size: 24px; font-weight: 800; margin-top: 2px; }
-  .stat .v small { font-size: 13px; font-weight: 600; color: var(--ok); }
 
-  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 8px 0 4px; }
-  .m-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
-  .m-card.alert { border-color: #fdba74; background: var(--warn-soft); }
-  .m-card .name { font-size: 14px; font-weight: 700; }
-  .m-card .badge { margin-top: 6px; }
-  .m-card .meta { font-size: 12.5px; color: var(--sub); margin-top: 8px; }
-
-  .feed-title { font-size: 13px; font-weight: 700; color: var(--sub); margin: 24px 0 6px; letter-spacing: .05em; }
+  .feed { border: 1px solid var(--line); border-radius: 14px; background: #fff; padding: 6px 18px; margin-bottom: 24px; }
   .feed-item {
-    display: flex; gap: 14px; padding: 11px 2px;
-    border-bottom: 1px dashed var(--line); font-size: 13.5px;
+    display: flex; gap: 14px; padding: 12px 2px; align-items: baseline;
+    border-bottom: 1px dashed var(--line); font-size: 13px;
   }
-  .feed-item .t { color: var(--sub); font-size: 12.5px; min-width: 44px; }
-  .feed-item .ok { color: var(--ok); font-weight: 700; }
-  .feed-item .esc { color: var(--warn); font-weight: 700; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item .t { color: var(--sub); font-size: 11.5px; min-width: 40px; font-weight: 600; }
+  .feed-item .tag-ok, .feed-item .tag-esc, .feed-item .tag-info {
+    font-size: 11px; font-weight: 800; border-radius: 6px; padding: 2px 8px; white-space: nowrap;
+  }
+  .feed-item .tag-ok { background: var(--ok-soft); color: var(--ok); }
+  .feed-item .tag-esc { background: var(--warn-soft); color: var(--warn); }
+  .feed-item .tag-info { background: var(--accent-soft); color: var(--accent-dark); }
 
-  .flow-note {
-    max-width: 1040px; margin: 48px auto 0; padding: 18px 22px;
-    border-radius: 12px; background: #fff; border: 1px solid var(--line);
-    font-size: 14px; color: var(--sub);
+  /* 승인 대기함 — 향후 기능 자리 */
+  .approval-box {
+    border: 1.5px dashed var(--line); background: #fafbfc;
+    border-radius: 16px; padding: 18px 20px;
   }
-  .flow-note b { color: var(--ink); }
+  .approval-box .bx-head { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
+  .approval-box .bx-head h3 { font-size: 14px; font-weight: 800; color: var(--sub); }
+  .approval-box .soon {
+    background: #e5e7eb; color: var(--sub); font-size: 10.5px; font-weight: 800;
+    border-radius: 999px; padding: 2px 10px;
+  }
+  .approval-box .desc { font-size: 12px; color: var(--sub); margin-bottom: 12px; }
+  .approval-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 13px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px; opacity: .6;
+  }
+  .approval-card .ico {
+    width: 40px; height: 40px; border-radius: 11px; background: var(--warn-soft);
+    display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;
+  }
+  .approval-card .body { flex: 1; }
+  .approval-card .what { font-size: 13.5px; font-weight: 700; }
+  .approval-card .why { font-size: 12px; color: var(--sub); margin-top: 1px; }
+  .approval-card .acts { display: flex; gap: 7px; }
+  .approval-card .acts button {
+    border-radius: 9px; padding: 8px 16px; font-size: 12.5px; font-weight: 700; border: none;
+  }
+  .approval-card .approve { background: var(--accent); color: #fff; }
+  .approval-card .reject { background: #f3f4f6; color: var(--sub); }
+
+  .toast {
+    position: fixed; bottom: 26px; left: 50%; transform: translate(-50%, 90px);
+    background: #1f2937; color: #fff; font-size: 13px; font-weight: 600;
+    border-radius: 12px; padding: 12px 22px; z-index: 90;
+    transition: transform .35s cubic-bezier(.2,.9,.3,1.2); box-shadow: 0 10px 28px rgba(0,0,0,.3);
+  }
+  .toast.show { transform: translate(-50%, 0); }
+
+  @media (max-width: 1020px) {
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .m-grid { grid-template-columns: repeat(2, 1fr); }
+    .side { display: none; }
+  }
+  @media (max-width: 720px) {
+    .scenario-panel { width: 100%; max-width: 375px; }
+    .phone { width: 100%; max-width: 375px; height: 700px; }
+    .m-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
-<header class="board-head">
-  <span class="tag">웹 프로토타입 · 순수 HTML/CSS · JS 없음</span>
-  <h1>무인빨래방 AI 점장 에이전트 — 화면 프로토타입</h1>
-  <p>고객 흐름(QR 랜딩 → 진행 중)과 사장님 대시보드. 실제 데이터·동작은 없으며 화면 구조 확인용.</p>
-</header>
-
-<!-- ① QR 랜딩 -->
-<div class="screen-label">
-  <b>① QR 랜딩 — 알림 신청</b>
-  <span>세탁기에 붙은 QR을 찍으면 열리는 웹 페이지 (앱 설치 없음)</span>
-</div>
-<div class="browser">
-  <div class="chrome">
-    <div class="dots"><i></i><i></i><i></i></div>
-    <div class="urlbar">laundry-agent.app/m/washer-3</div>
+<div class="topbar">
+  <div class="title">🐱 빨래집사 — 프로토타입
+    <small>무인빨래방 AI 운영 에이전트 · 클릭 가능한 화면 시안 · 데이터는 예시</small>
   </div>
-  <nav class="nav">
-    <span class="logo">🧺 AI 점장</span>
-    <span class="right">○○빨래방 역삼점</span>
-  </nav>
-  <div class="page-center">
-    <div class="card">
-      <h2>세탁 알림 받기</h2>
-      <p class="sub">종료 10분 전과 완료 시점에 알려드려요</p>
+  <div class="mode-switch">
+    <button id="btnUser" class="on" onclick="setMode('user')">사용자 모드</button>
+    <button id="btnOwner" onclick="setMode('owner')">점주 모드</button>
+  </div>
+</div>
 
-      <div class="machine-hero">
-        <div class="no">세탁기 3번</div>
-        <div class="st"><span class="badge run">세탁 중</span> &nbsp;에이전트가 자동으로 감지했어요</div>
+<!-- ═══════════════ 사용자 모드 ═══════════════ -->
+<div id="viewUser" class="mode-view on">
+  <div class="user-wrap">
+
+    <div class="scenario-panel">
+      <h3>시나리오 단계</h3>
+      <button class="sc on" data-u="landing" onclick="goU('landing', this)">
+        <b>① QR 랜딩 · 알림 신청</b><span>세탁기의 QR을 찍으면 열리는 화면</span>
+      </button>
+      <button class="sc" data-u="progress" onclick="goU('progress', this)">
+        <b>② 진행 화면</b><span>예상 종료 시간(범위) · 진행 단계</span>
+      </button>
+      <button class="sc" data-u="done" onclick="goU('done', this)">
+        <b>③ 완료 · 수거 대기</b><span>완료 푸시 → 수거 확인</span>
+      </button>
+      <button class="sc" data-u="abandon" onclick="goU('abandon', this)">
+        <b>④ 방치 안내 상태</b><span>다음 손님이 같은 QR을 찍었을 때</span>
+      </button>
+      <p class="scenario-note">①에서 [알림 신청]을 누르면 실제 흐름대로 ②로 넘어갑니다. ③에서는 완료 푸시가 함께 뜹니다.</p>
+      <div class="flow-strip">
+        <b>전체 흐름</b><br/>
+        고객 세탁 시작 → <b>AI 감지</b> → 세션 생성 → (선택) QR 알림 신청 → 종료 감지 → 수거 확인 → 수거 완료<br/>
+        <span style="color:var(--warn);">or 방치 판단 → 자동 대응 → 사장님 보고</span>
       </div>
+    </div>
 
-      <p class="sub" style="margin-bottom:6px;">(선택) 어떤 코스를 돌리셨나요? — 안 골라도 돼요</p>
-      <div class="chips">
-        <span class="chip on">표준 47분</span>
-        <span class="chip">쾌속 30분</span>
-        <span class="chip">이불 60분</span>
-        <span class="chip">모름</span>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+
+        <!-- 푸시 알림 -->
+        <div class="push" id="push">
+          <div class="appicon">🐱</div>
+          <div class="txt">
+            <b id="pushTitle">세탁 완료!</b>
+            <p id="pushBody">3번 세탁기 세탁이 끝났어요. 찾아가 주세요.</p>
+          </div>
+          <span class="when">지금</span>
+        </div>
+
+        <div class="statusbar"><span id="clock">18:32</span><span>📶 &nbsp;🔋</span></div>
+
+        <div class="app-body">
+          <div class="app-head">
+            <span class="logo">🐱 빨래집사</span>
+            <span class="store">○○빨래방 역삼점</span>
+          </div>
+
+          <!-- ① QR 랜딩 -->
+          <div class="u-screen on" id="u-landing">
+            <div class="hero-card">
+              <div class="machine-no">MACHINE 03</div>
+              <div class="machine-name">세탁기 3번 <span class="badge run" style="background:rgba(255,255,255,.2);color:#fff;"><span class="dot pulse"></span>세탁 중</span></div>
+              <div class="detect">⚡ 집사가 전력 데이터로 세탁 시작을 자동 감지했어요 (18:02)</div>
+            </div>
+
+            <div class="white-card" id="subscribeCard">
+              <h2 style="font-size:17px;font-weight:800;">세탁 알림 받기</h2>
+              <p style="font-size:12.5px;color:var(--sub);margin-top:2px;">종료 10분 전 · 완료 시점에 알려드려요. 연락처 입력도, 앱 설치도 없어요.</p>
+              <div style="margin-top:16px;">
+                <button class="btn primary" id="btnSubscribe" onclick="subscribe()">🔔 이 세탁기 알림 신청</button>
+                <p class="fineprint">알림을 신청하지 않아도 이 페이지에서 진행 상황을 계속 볼 수 있어요.<br/>다만 완료·수거 알림은 보내드릴 수 없어요.</p>
+              </div>
+            </div>
+
+            <div class="butler-tip">
+              <span class="cat">🐱</span>
+              <span>세탁이 끝나고 오래 찾아가지 않으면, 집사가 대신 챙기고 사장님께 보고해요.</span>
+            </div>
+          </div>
+
+          <!-- ② 진행 화면 -->
+          <div class="u-screen" id="u-progress">
+            <div class="white-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h2 style="font-size:17px;font-weight:800;">세탁기 3번</h2>
+                <span class="badge run"><span class="dot pulse"></span>세탁 중</span>
+              </div>
+
+              <div class="eta-block">
+                <div class="lbl">종료 예상</div>
+                <div class="time">18:49</div>
+                <span class="range">18:45 ~ 18:55 사이</span>
+              </div>
+
+              <div class="progress"><div id="pbar" style="width:62%"></div></div>
+              <div class="steps">
+                <span class="on"><i></i>세탁</span>
+                <span class="on"><i></i>헹굼</span>
+                <span id="stepSpin"><i></i>탈수</span>
+                <span><i></i>완료</span>
+              </div>
+            </div>
+
+            <div class="info-tile" style="margin-bottom:14px;">
+              <span class="ico">🔔</span>
+              <span id="subState"><b>알림 신청 완료</b> — 마지막 탈수가 감지되면 "10분 후 종료, 지금 출발하세요" 알림을 보내드려요.</span>
+            </div>
+
+            <div class="butler-tip" style="margin-bottom:0;">
+              <span class="cat">🐱</span>
+              <span>진행되면서 예상 범위가 점점 좁혀져요. 시간은 점이 아니라 범위로 알려드려요.</span>
+            </div>
+          </div>
+
+          <!-- ③ 완료 · 수거 대기 -->
+          <div class="u-screen" id="u-done">
+            <div class="white-card">
+              <div class="done-hero">
+                <div class="big">🧺</div>
+                <h2>세탁이 끝났어요!</h2>
+                <p>세탁기 3번 · 18:51 종료</p>
+                <span class="timer-chip">수거 대기 12분째</span>
+              </div>
+            </div>
+
+            <div class="info-tile warn" style="margin-bottom:14px;">
+              <span class="ico">⏱️</span>
+              <span>30분 이상 찾아가지 않으면 다음 손님을 위해 <b>수거 안내</b>를 다시 보내드려요.</span>
+            </div>
+
+            <button class="btn primary" onclick="collected()">✅ 수거했어요</button>
+            <p class="fineprint">문이 열리면 자동으로 확인되니, 버튼은 안 눌러도 괜찮아요</p>
+          </div>
+
+          <!-- ④ 방치 안내 상태 (다음 손님 시점) -->
+          <div class="u-screen" id="u-abandon">
+            <div class="white-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h2 style="font-size:17px;font-weight:800;">세탁기 3번</h2>
+                <span class="badge warn"><span class="dot"></span>수거 대기 41분</span>
+              </div>
+              <p style="font-size:13px;color:var(--sub);margin-top:8px;">
+                이 세탁기에는 <b style="color:var(--ink);">30분 이상 찾아가지 않은 세탁물</b>이 있어요.
+                집사가 안내를 보냈지만 아직 수거되지 않았고, 사장님께도 보고했어요.
+              </p>
+            </div>
+
+            <div class="white-card">
+              <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;">💡 지금 이 세탁기를 쓰고 싶다면</h3>
+              <div class="shelf-guide">
+                <div class="shelf-step"><span class="n">1</span>안의 세탁물을 꺼내 <b>&nbsp;옆 선반 위에&nbsp;</b> 올려 주세요</div>
+                <div class="shelf-step"><span class="n">2</span>바로 사용하시면 돼요 — 매장 규칙상 괜찮아요</div>
+                <div class="shelf-step"><span class="n">3</span>원래 주인에게는 보관 위치가 자동으로 안내돼요</div>
+              </div>
+              <div style="margin-top:16px;">
+                <button class="btn primary" onclick="toast('확인되었습니다. 이용해 주셔서 감사해요!')">선반으로 옮기고 사용할게요</button>
+                <button class="btn ghost" onclick="toast('다른 기계 현황을 보여드릴게요 (프로토타입)')">비어 있는 다른 기계 보기</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="home-indicator"></div>
       </div>
+    </div>
 
-      <a class="btn primary block" href="#">이 세탁기 알림 신청</a>
-      <p class="hint">연락처 입력 없이 이 브라우저로 알림이 와요</p>
+  </div>
+</div>
+
+<!-- ═══════════════ 점주 모드 ═══════════════ -->
+<div id="viewOwner" class="mode-view">
+  <div class="owner-wrap">
+    <div class="owner-frame">
+
+      <aside class="side">
+        <div class="brand">🐱 빨래집사<small>○○빨래방 역삼점</small></div>
+        <button class="item on">📊 &nbsp;대시보드</button>
+        <button class="item">🗂 &nbsp;처리 내역</button>
+        <button class="item">🔧 &nbsp;기기 관리</button>
+        <button class="item">⚙️ &nbsp;매장 정책</button>
+        <div class="agent-status"><b>집사 가동 중</b>마지막 감지 5초 전 · 센서 정상</div>
+      </aside>
+
+      <div class="o-main">
+        <div class="o-head">
+          <div>
+            <h2>안녕하세요, 사장님 🐱</h2>
+            <p class="sub">오늘 집사가 방치 3건에 수거 알림 5회를 보내 모두 수거를 확인했어요. 사장님 확인이 필요한 건 <b>1건</b>이에요.</p>
+          </div>
+          <div class="right">7월 14일 (화) 21:30 기준<br/>5초마다 자동 새로고침</div>
+        </div>
+
+        <!-- 요약 -->
+        <div class="stat-row">
+          <div class="stat"><div class="k">전체 기계</div><div class="v">6대</div><div class="note">세탁기 4 · 건조기 2</div></div>
+          <div class="stat"><div class="k">가동 중</div><div class="v">2대</div><div class="note">세탁기 1 · 건조기 1</div></div>
+          <div class="stat warn-stat"><div class="k">방치</div><div class="v">1대</div><div class="note">세탁기 2 · 32분째</div></div>
+          <div class="stat"><div class="k">확인 필요</div><div class="v" style="color:var(--warn);">1건</div><div class="note">전력 이상 의심</div></div>
+        </div>
+
+        <!-- 기계 현황 -->
+        <div class="grid-title"><h3>기계 현황</h3><span>전력·도어 센서로 자동 감지 · 5초마다 갱신</span></div>
+        <div class="m-grid">
+          <div class="m-card">
+            <div class="top"><span class="name">세탁기 1</span><span class="badge run"><span class="dot pulse"></span>세탁 중</span></div>
+            <div class="meta">종료 예상 <b>19:05~19:15</b> · 알림 신청 1명</div>
+            <div class="mini-bar"><div style="width:71%"></div></div>
+          </div>
+          <div class="m-card alert">
+            <div class="top"><span class="name">세탁기 2</span><span class="badge warn"><span class="dot"></span>방치 32분</span></div>
+            <div class="meta">20:58 종료 · 2차 수거 알림 발송됨</div>
+            <span class="no-contact">📵 QR 미신청 — 사장님 알림 + 랜딩 안내 모드 전환됨</span>
+          </div>
+          <div class="m-card">
+            <div class="top"><span class="name">세탁기 3</span><span class="badge done"><span class="dot"></span>수거 완료</span></div>
+            <div class="meta">18:51 종료 · <b>18:58 도어 열림 감지</b>로 자동 확인</div>
+          </div>
+          <div class="m-card">
+            <div class="top"><span class="name">세탁기 4</span><span class="badge warn"><span class="dot"></span>확인 필요</span></div>
+            <div class="meta">전력 패턴 이상 — 사이클 중단 의심 (18:03)</div>
+          </div>
+          <div class="m-card">
+            <div class="top"><span class="name">건조기 1</span><span class="badge run"><span class="dot pulse"></span>건조 중</span></div>
+            <div class="meta">종료 예상 <b>21:40~21:50</b></div>
+            <div class="mini-bar"><div style="width:38%"></div></div>
+          </div>
+          <div class="m-card">
+            <div class="top"><span class="name">건조기 2</span><span class="badge idle"><span class="dot"></span>대기</span></div>
+            <div class="meta">마지막 사용 17:40 · 오늘 6회 가동</div>
+          </div>
+        </div>
+
+        <!-- 처리 내역 -->
+        <div class="grid-title"><h3>최근 처리 내역</h3><span>집사의 모든 자동 행동은 사후 보고돼요</span></div>
+        <div class="feed">
+          <div class="feed-item"><span class="t">21:12</span><span class="tag-info">자동 안내</span><span>세탁기 2 — QR 미신청 방치 → 사장님 알림 + QR 랜딩 <b>방치 안내 모드</b> 전환</span></div>
+          <div class="feed-item"><span class="t">20:41</span><span class="tag-ok">자동 해결</span><span>세탁기 5 방치 21분 → 1차 수거 알림 후 도어 열림 확인</span></div>
+          <div class="feed-item"><span class="t">19:12</span><span class="tag-ok">자동 해결</span><span>세탁기 1 방치 28분 → 2차 수거 알림 후 도어 열림 확인</span></div>
+          <div class="feed-item"><span class="t">18:03</span><span class="tag-esc">확인 필요</span><span>세탁기 4 전력 패턴 이상 (사이클 중단 의심) — 집사 판단 범위 밖이라 에스컬레이션</span></div>
+          <div class="feed-item"><span class="t">17:55</span><span class="tag-ok">자동 해결</span><span>세탁기 3 방치 4분 → 완료 알림만으로 수거됨</span></div>
+        </div>
+
+        <!-- 승인 대기함 (향후 기능 자리) -->
+        <div class="approval-box">
+          <div class="bx-head">
+            <h3>🔔 승인 대기함</h3>
+            <span class="soon">향후 기능</span>
+          </div>
+          <p class="desc">돈이 나가거나 되돌리기 어려운 행동(발주·환불)은 여기에 카드로 쌓이고, 사장님의 [승인] 후에만 실행돼요. 재고·발주 기능이 붙을 자리입니다.</p>
+          <div class="approval-card">
+            <div class="ico">📦</div>
+            <div class="body">
+              <div class="what">세제 10L 발주 — 재고 소진 3일 전 예상 <span style="font-size:11px;color:var(--sub);">(예시)</span></div>
+              <div class="why">일평균 사용량 기준 목요일 소진 예상 · 49,800원</div>
+            </div>
+            <div class="acts">
+              <button class="approve" disabled>승인</button>
+              <button class="reject" disabled>거절</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ② 진행 중 -->
-<div class="screen-label">
-  <b>② 진행 중 — 상태 확인</b>
-  <span>알림 신청 후 보는 페이지 · 예상 시각은 점이 아니라 범위로, 진행되며 좁혀짐</span>
-</div>
-<div class="browser">
-  <div class="chrome">
-    <div class="dots"><i></i><i></i><i></i></div>
-    <div class="urlbar">laundry-agent.app/m/washer-3/status</div>
-  </div>
-  <nav class="nav">
-    <span class="logo">🧺 AI 점장</span>
-    <span class="right">○○빨래방 역삼점</span>
-  </nav>
-  <div class="page-center">
-    <div class="card">
-      <h2>세탁기 3번 <span class="badge run">세탁 중</span></h2>
+<div class="toast" id="toastEl">저장되었습니다</div>
 
-      <div class="eta">
-        <div class="time">18:49 종료 예상</div>
-        <div class="range">예상 범위 18:45 ~ 18:55</div>
-      </div>
+<script>
+  /* ── 모드 전환 ── */
+  function setMode(m) {
+    document.getElementById('viewUser').classList.toggle('on', m === 'user');
+    document.getElementById('viewOwner').classList.toggle('on', m === 'owner');
+    document.getElementById('btnUser').classList.toggle('on', m === 'user');
+    document.getElementById('btnOwner').classList.toggle('on', m === 'owner');
+  }
 
-      <div class="progress"><div></div></div>
-      <div class="steps">
-        <span class="on">세탁</span><span class="on">헹굼</span><span>탈수</span><span>완료</span>
-      </div>
+  /* ── 사용자 모드: 화면 전환 ── */
+  let subscribed = false;
+  function goU(id, btn) {
+    document.querySelectorAll('.u-screen').forEach(s => s.classList.remove('on'));
+    document.getElementById('u-' + id).classList.add('on');
+    document.querySelectorAll('.scenario-panel .sc').forEach(b => b.classList.remove('on'));
+    (btn || document.querySelector('[data-u="' + id + '"]')).classList.add('on');
+    if (id === 'done') showPush('세탁 완료! 🧺', '3번 세탁기 세탁이 끝났어요. 찾아가 주세요.');
+    if (id === 'progress') {
+      hidePush();
+      document.getElementById('subState').innerHTML = subscribed
+        ? '<b>알림 신청 완료</b> — 마지막 탈수가 감지되면 "10분 후 종료, 지금 출발하세요" 알림을 보내드려요.'
+        : '<b>알림 미신청</b> — 이 화면에서 상태를 직접 확인해 주세요. 지금이라도 QR을 다시 찍으면 알림을 신청할 수 있어요.';
+    }
+  }
 
-      <div class="notify-card">
-        🔔 마지막 탈수가 감지되면 <b>“10분 후 종료, 지금 출발하세요”</b> 알림을 보내드려요.
-      </div>
-    </div>
-  </div>
-</div>
+  function subscribe() {
+    subscribed = true;
+    const b = document.getElementById('btnSubscribe');
+    b.textContent = '✅ 알림 신청 완료';
+    b.disabled = true;
+    toast('알림 신청 완료! 종료 10분 전에 알려드릴게요');
+    setTimeout(() => goU('progress'), 700);
+  }
 
-<!-- ③ 사장님 대시보드 -->
-<div class="screen-label">
-  <b>③ 사장님 대시보드 — 보고만 받는 화면</b>
-  <span>에이전트가 감지·판단·대응한 결과를 확인 · 사장님이 누른 버튼 0개</span>
-</div>
-<div class="browser">
-  <div class="chrome">
-    <div class="dots"><i></i><i></i><i></i></div>
-    <div class="urlbar">laundry-agent.app/owner/dashboard</div>
-  </div>
-  <div class="dash">
-    <aside class="side">
-      <div class="item on">대시보드</div>
-      <div class="item">처리 내역</div>
-      <div class="item">기기 관리</div>
-      <div class="item">매장 정책</div>
-    </aside>
-    <div class="main">
-      <h2>우리 매장 <span class="badge done">에이전트 정상 가동</span></h2>
-      <p class="sub">7월 9일 (목) 21:30 기준</p>
+  function collected() {
+    toast('수거 확인! 이용해 주셔서 감사해요');
+    hidePush();
+  }
 
-      <div class="stat-row">
-        <div class="stat"><div class="k">오늘 가동 사이클</div><div class="v">27회</div></div>
-        <div class="stat"><div class="k">방치 발생 → 자동 해결</div><div class="v">3건 <small>/ 3건</small></div></div>
-        <div class="stat"><div class="k">사장님 개입 필요</div><div class="v">1건</div></div>
-      </div>
+  /* ── 푸시 알림 ── */
+  let pushTimer;
+  function showPush(title, body) {
+    document.getElementById('pushTitle').textContent = title;
+    document.getElementById('pushBody').textContent = body;
+    const p = document.getElementById('push');
+    clearTimeout(pushTimer);
+    setTimeout(() => p.classList.add('show'), 350);
+    pushTimer = setTimeout(() => p.classList.remove('show'), 5200);
+  }
+  function hidePush() { clearTimeout(pushTimer); document.getElementById('push').classList.remove('show'); }
 
-      <div class="dash-grid">
-        <div class="m-card">
-          <div class="name">세탁기 1</div>
-          <span class="badge run">세탁 중</span>
-          <div class="meta">19:05 종료 예상</div>
-        </div>
-        <div class="m-card alert">
-          <div class="name">세탁기 2</div>
-          <span class="badge warn">방치 32분</span>
-          <div class="meta">2차 수거 알림 발송됨</div>
-        </div>
-        <div class="m-card">
-          <div class="name">세탁기 3</div>
-          <span class="badge done">수거 완료</span>
-          <div class="meta">18:51 종료 · 18:58 수거</div>
-        </div>
-        <div class="m-card">
-          <div class="name">건조기 1</div>
-          <span class="badge idle">대기</span>
-          <div class="meta">마지막 사용 17:40</div>
-        </div>
-      </div>
+  /* ── 토스트 ── */
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toastEl');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
 
-      <div class="feed-title">오늘 에이전트 처리 내역</div>
-      <div class="feed-item"><span class="t">20:41</span><span><span class="ok">자동 해결</span> — 세탁기 2 방치 → 1차 알림 후 수거됨</span></div>
-      <div class="feed-item"><span class="t">19:12</span><span><span class="ok">자동 해결</span> — 세탁기 1 방치 28분 → 2차 알림 후 수거됨</span></div>
-      <div class="feed-item"><span class="t">18:03</span><span><span class="esc">확인 필요</span> — 세탁기 4 전력 패턴 이상 (사이클 중단 의심)</span></div>
-    </div>
-  </div>
-</div>
+  /* ── 살아있는 느낌: 시계 + 진행바 ── */
+  setInterval(() => {
+    const d = new Date();
+    document.getElementById('clock').textContent =
+      String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }, 1000);
 
-<div class="flow-note">
-  <b>흐름:</b> 고객이 QR 스캔(①) → 에이전트가 전력 패턴으로 상태 감지 → 진행 중 페이지(②)와 출발·완료 알림 →
-  미수거 시 방치 판정과 단계적 넛지 → 사장님은 결과 보고만 확인(③).
-  <b>사장님이 누른 버튼은 0개</b> — 이것이 이 서비스가 에이전트인 이유.
-</div>
+  let pw = 62;
+  setInterval(() => {
+    if (!document.getElementById('u-progress').classList.contains('on')) return;
+    pw = Math.min(88, pw + 0.4);
+    document.getElementById('pbar').style.width = pw + '%';
+    if (pw > 80) document.getElementById('stepSpin').classList.add('on');
+  }, 1500);
+</script>
 
 </body>
 </html>
