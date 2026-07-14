@@ -152,6 +152,53 @@ POST /ingest/:machineId
 - 운영: 센서 폴링 스크립트가 동일 엔드포인트로 전송
 - 개발·운영 경로는 항상 일치시킨다
 
+## 조회 API
+
+화면(T-14~T-16)이 소비하는 응답 형태다. `client/src/mocks/`가 이 모양 그대로 mock을 들고 있고,
+T-17은 mock import를 fetch로 갈아끼우기만 한다. **서버(T-13)는 이 모양에 맞춘다.**
+
+```
+GET /api/machines      → Machine[]        # 대시보드
+GET /api/machines/:id  → Machine          # QR 랜딩 · 진행 화면
+GET /api/notifications/recent → Notification[]   # 대시보드 최근 처리 내역 (sentAt 내림차순)
+```
+
+```jsonc
+// Machine — machine 테이블 + 현재 session 조인
+{
+  "id": "m1",
+  "name": "세탁기 1",
+  "status": "RUNNING",              // 6상태
+  "needsAttention": false,          // 센서·전력 이상. 상태가 아니라 플래그다
+  "attentionReason": null,          // needsAttention일 때만 문자열
+  "session": {                      // 진행 중 세션이 없으면 null
+    "id": "s-101",
+    "machineId": "m1",
+    "startedAt": "2026-07-14T18:02:00.000Z",
+    "endedAt": null,                // 종료 전이면 null
+    "state": "RUNNING",
+    "etaFrom": "2026-07-14T18:45:00.000Z",   // 예상 종료 범위 — 서버가 계산한다
+    "etaTo":   "2026-07-14T18:55:00.000Z",
+    "subscriberCount": 1            // 0이면 QR 미신청
+  }
+}
+
+// Notification — notification 테이블 + machineName · sessionState 조인
+{
+  "id": "n-209", "sessionId": "s-104", "machineId": "m4", "machineName": "세탁기 4",
+  "sessionState": "ABANDONED",
+  "type": "OWNER_ALERT",            // DEPARTURE | COMPLETED | COLLECT_1 | COLLECT_2 | OWNER_ALERT
+  "sentAt": "2026-07-14T21:12:00.000Z"
+}
+```
+
+규칙
+- 시각은 전부 ISO 8601 문자열. 경과 시간·진행률·"방치 32분째"는 화면이 계산한다
+- `plugId` / `doorSensorId`는 내부 센서 매핑이라 응답에 담지 않는다
+- **예상 종료 범위(`etaFrom`/`etaTo`)는 서버가 계산한다.** 전력 곡선·코스 소요시간이 서버에 있으므로, 고객 화면과 대시보드가 같은 값을 본다
+- **`needsAttention`은 7번째 상태가 아니다.** 상태는 6개를 유지하고, 전력 패턴 이상은 이 플래그로 표시한다 (대시보드 "확인 필요")
+- "자동 해결 / 자동 안내" 같은 표시 문구는 저장하지 않는다. `type`과 `sessionState`로 화면이 판단한다
+
 ---
 
 # Data Model
