@@ -55,6 +55,7 @@ client/             # React (Vite) — 5173
     pages/          # 고객(m/*), 사장님(owner/*)
     components/
     styles/         # tokens.css (디자인 토큰)
+    utils/          # 화면 공용 함수 (시각 표시·경과 시간·진행률)
     mocks/          # mock 데이터 (구조는 아래 Data Model과 동일)
 server/             # Express — 3000
   index.js
