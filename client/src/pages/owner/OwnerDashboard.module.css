@@ -1,0 +1,436 @@
+.layout {
+  display: flex;
+  align-items: stretch;
+  min-height: 100vh;
+}
+
+/* 사이드바는 왼쪽에 붙이고, 본문은 남은 폭 안에서 가운데로 모은다.
+   margin auto가 없으면 넓은 화면에서 본문이 왼쪽에 붙고 오른쪽이 통째로 빈다. */
+.page {
+  flex: 1;
+  min-width: 0;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  /* 카운터에서 5초 보고 판단하는 화면이다. 스크롤을 만들지 않는 게 목표라 여백을 조인다 */
+  gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+  }
+}
+
+/* ── 헤더 ── */
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.greeting {
+  margin: 0;
+  font-size: var(--text-heading);
+  font-weight: 800;
+}
+
+.refresh {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* 자동 갱신이 돌아도 사람이 직접 확인할 손잡이는 하나 있어야 한다.
+   파괴적인 동작이 아니므로 조용한 보조 버튼으로 둔다 */
+.refreshButton {
+  padding: 7px var(--space-2);
+  border-radius: var(--radius-button);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.refreshButton:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.refreshButton:active {
+  background: var(--color-primary-light);
+}
+
+.refreshNote {
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+}
+
+/* ── ① 지금 챙길 것 ──
+   방치색(#F08C00)은 UI Rule 고정값이라 hex를 바꿀 수 없고, 빨강은 오류 전용이라 못 쓴다.
+   그래서 색을 바꾸는 대신 채워서 쓴다 — 옅은 배경 위의 주황 글씨는 묽다.
+   강조는 "채운 카운트" 하나로 몰아준다. 테두리·바까지 더하면 같은 말을 세 번 하는 셈이다 */
+.todo {
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+/* 챙길 게 없는 날 — 이게 사장님이 가장 자주 봐야 하는 화면이다 */
+.todoClear {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.todoTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-subtitle);
+  font-weight: 800;
+}
+
+/* 채운 주황. 옅은 배경 위의 주황 글씨보다 훨씬 멀리서 보인다 */
+.todoCount {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--radius-badge);
+  background: var(--state-abandoned);
+  color: #fff;
+  font-size: var(--text-caption);
+  font-weight: 800;
+}
+
+/* 할 일이 여러 건이면 나란히 놓는다. 세로로 쌓으면 카드가 가로로 길쭉해져
+   한 건씩 눈으로 좇게 되고, 두 건이 한눈에 안 들어온다.
+   한 건뿐이면 auto-fit이 폭을 다 쓴다 — 그게 맞다. 하나뿐인 일은 크게 보여야 한다 */
+.todoList {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-2);
+}
+
+/* 바탕은 흰색 그대로 둔다. 배경을 칠하면 그 위 글씨의 대비가 깎여 읽기 어려워진다.
+   색은 왼쪽 아이콘 원 하나에 작고 진하게 몰아준다 */
+.todoItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-input);
+  background: var(--color-card);
+  border: 1px solid var(--state-abandoned-line);
+}
+
+.todoText {
+  min-width: 0;
+}
+
+.todoItemTitle {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+
+.todoBody {
+  margin: 3px 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+/* 채운 원. 넓게 칠한 배경보다 작고 진한 색이 더 잘 보인다 */
+.todoIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--state-abandoned);
+  font-size: var(--text-subtitle);
+  line-height: 1;
+}
+
+/* 챙길 게 없는 날 — 같은 자리, 같은 형태, 색만 완료색으로 */
+.todoIconClear {
+  background: var(--state-done);
+}
+
+/* 확인 필요는 방치보다 한 단계 낮다. 주황을 주지 않는다 */
+.todoMinor {
+  border-color: var(--color-border);
+}
+
+.todoMinor .todoIcon {
+  background: var(--color-bg);
+}
+
+.todoMinor .todoItemTitle {
+  font-weight: 700;
+  color: var(--color-text-sub);
+}
+
+/* 한 줄 요약 — "전체 4대"를 큰 칸에 놓을 이유가 없다 */
+.strip {
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+}
+
+/* ── 섹션 제목 ── */
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.sectionHead h2 {
+  margin: 0;
+  font-size: var(--text-subtitle);
+  font-weight: 800;
+}
+
+.sectionHead span {
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+}
+
+/* ── 기계 카드 ── */
+.machines {
+  display: grid;
+  /* 세탁기 4대가 넓은 화면에서 한 줄에 다 들어와야 한 눈에 읽힌다.
+     align-items를 건드리지 않는다 — 기본값 stretch라야 한 줄의 카드 높이가 전부 같아진다 */
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-2);
+}
+
+.machine {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+/* 방치된 기계 — 배경은 흰색 그대로. 강조는 꽉 채운 배지가 한다.
+   카드를 통째로 칠하면 그 안의 본문 대비가 깎인다 */
+.machineAlert {
+  border-color: var(--state-abandoned-line);
+}
+
+.machineTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.machineName {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+
+/* 본문이 남는 높이를 먹는다. 그래야 진행 바·경고 줄이 카드 아래쪽에 나란히 정렬된다 */
+.machineMeta {
+  flex: 1;
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.bar {
+  margin-top: var(--space-2);
+  height: 6px;
+  border-radius: var(--radius-badge);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: var(--radius-badge);
+  background: var(--color-primary);
+  transition: width 0.6s ease;
+}
+
+/* 꼬리표 — 짧은 표식이다. 설명은 "사장님 손이 필요해요"에 있다.
+   비어 있으면 자리를 차지하지 않는다 (:empty) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+
+.chips:empty {
+  margin-top: 0;
+}
+
+.check,
+.noChannel {
+  padding: 3px var(--space-1);
+  border-radius: var(--radius-badge);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+
+/* 점검 필요 — 기계 문제. 방치와 같은 주황을 주지 않는다. 급한 일이 아니다 */
+.check {
+  background: var(--color-bg);
+  color: var(--color-text-sub);
+}
+
+/* QR 미신청 — 방치의 이유. 흰 바탕에 주황 글씨라 대비가 살아 있다 */
+.noChannel {
+  border: 1px solid var(--state-abandoned-line);
+  color: var(--state-abandoned);
+}
+
+/* ── 처리 내역 접기 (① 할 일 중심) ── */
+.log {
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.logSummary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  font-size: var(--text-subtitle);
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.logSummary::-webkit-details-marker {
+  display: none;
+}
+
+.logSummary::before {
+  content: "›";
+  font-size: var(--text-subtitle);
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.log[open] .logSummary::before {
+  transform: rotate(90deg);
+}
+
+.logNote {
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.log .feed {
+  margin-top: 0;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding-top: 0;
+}
+
+/* ── 처리 내역 ── */
+.feed {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  list-style: none;
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+/* 시각 · 태그 · 내용을 grid로 고정한다.
+   flex + wrap으로 두면 내용 길이에 따라 어떤 줄은 태그 옆에 붙고 어떤 줄은 내려가서
+   좁은 화면에서 줄 시작 위치가 행마다 달라진다 */
+.feedItem {
+  display: grid;
+  grid-template-columns: 44px auto 1fr;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-caption);
+}
+
+.feedItem:last-child {
+  border-bottom: none;
+}
+
+.feedTime {
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.tag {
+  justify-self: start;
+  padding: 3px var(--space-1);
+  border-radius: var(--radius-badge);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+
+/* 색만 보고 "내 일인지"가 갈려야 한다 */
+.resolved {
+  background: #e9f6ea;
+  color: var(--state-done);
+}
+
+.attention {
+  background: var(--color-warning-light);
+  color: var(--state-abandoned);
+}
+
+.info {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.feedText {
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+
+  /* 좁은 화면 — 시각·태그가 윗줄, 내용은 항상 아랫줄 전체를 쓴다 */
+  .feedItem {
+    grid-template-columns: 44px 1fr;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .feedText {
+    grid-column: 1 / -1;
+  }
+}
