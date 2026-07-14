@@ -18,6 +18,11 @@ dist-ssr
 !.env.example
 server/data/
 
+# 센서 실측 원본 · Python 가상환경 (커밋 금지)
+*.csv
+server/scripts/.venv/
+__pycache__/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
