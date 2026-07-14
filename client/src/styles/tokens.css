@@ -24,6 +24,12 @@
   --state-abandoned: #f08c00;
   --state-error: #e84d4d;
 
+  /* 방치색을 흰색과 섞은 톤. 강조 배경에 쓴다.
+     rgba로 깔면 안 된다 — 배경(#F8FAFC)의 푸른기와 섞여 탁한 밤색이 된다.
+     불투명한 값을 써야 맑은 살구색이 나온다. */
+  --state-abandoned-tint: #fff2e2;
+  --state-abandoned-line: #f7ca94;
+
   /* Typography */
   --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
