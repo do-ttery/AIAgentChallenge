@@ -1,0 +1,3 @@
+# 빨래집사 센서 폴링 (T-04)
+# P110M 은 KLAP 프로토콜이라 최신 python-kasa 가 필요하다.
+python-kasa>=0.7.0
