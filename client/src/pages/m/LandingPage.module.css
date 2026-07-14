@@ -1,0 +1,336 @@
+/* 고객 화면 — 휴대폰에서 QR을 찍고 들어온다. 모바일이 기준이다.
+   빨강은 쓰지 않는다. 방치도 방치색(#F08C00)까지만 간다. */
+
+.page {
+  min-height: 100vh;
+  padding: var(--space-3);
+}
+
+.shell {
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ── 헤더 ── */
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+
+.store {
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+}
+
+.mascot {
+  font-size: var(--text-subtitle);
+  line-height: 1;
+  flex: none;
+}
+
+/* ── 히어로 — 기계 번호와 현재 상태가 가장 먼저 읽혀야 한다 ── */
+.hero {
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-card);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.machineNo {
+  margin: 0;
+  font-size: var(--text-small);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: 6px;
+}
+
+.machineName {
+  margin: 0;
+  font-size: var(--text-heading);
+  font-weight: 800;
+}
+
+.detect {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-small);
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+/* ── 카드 ── */
+.card {
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--text-subtitle);
+  font-weight: 800;
+}
+
+.sub {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+}
+
+.sub b {
+  color: var(--color-text);
+}
+
+.fineprint {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── 버튼 — 화면당 Primary 1개 ── */
+.button {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--color-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: var(--text-body);
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+}
+
+.button:active {
+  background: var(--color-primary-dark);
+}
+
+/* ── 종료 예상 — 진행 중일 때 가장 크게 읽혀야 하는 정보 ── */
+.eta {
+  padding: var(--space-3);
+  border-radius: var(--radius-input);
+  background: var(--color-primary-light);
+  text-align: center;
+}
+
+.etaLabel {
+  margin: 0;
+  color: var(--color-primary-dark);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+
+.etaRange {
+  margin: 4px 0 0;
+  color: var(--color-primary-dark);
+  font-size: var(--text-title);
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.etaNote {
+  margin: 6px 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+}
+
+/* ── 진행 바 ── */
+.bar {
+  margin-top: var(--space-3);
+  height: 8px;
+  border-radius: var(--radius-badge);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: var(--radius-badge);
+  background: var(--color-primary);
+  transition: width 0.6s ease;
+}
+
+/* ── 진행 단계 — 상태 머신에 있는 3단계만 ── */
+.steps {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
+.stepDone {
+  color: var(--color-primary-dark);
+  font-weight: 800;
+}
+
+.stepDone .stepDot {
+  background: var(--color-primary);
+}
+
+/* ── 완료 ── */
+.doneHero {
+  padding: var(--space-2) 0;
+  text-align: center;
+}
+
+.doneIcon {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.doneTitle {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-heading);
+  font-weight: 800;
+}
+
+.waitChip {
+  display: inline-block;
+  margin-top: var(--space-2);
+  padding: 5px var(--space-2);
+  border-radius: var(--radius-badge);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+
+/* ── 안내 타일 ── */
+.tile {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+}
+
+.tileWarn {
+  border-color: var(--state-abandoned);
+  background: var(--color-warning-light);
+  color: var(--color-text);
+}
+
+/* 알림 신청 완료 */
+.tileOn {
+  background: var(--color-primary-light);
+  border-color: transparent;
+  color: var(--color-primary-dark);
+}
+
+.tile b,
+.tileOn b {
+  color: inherit;
+}
+
+.tileIcon {
+  flex: none;
+  font-size: var(--text-subtitle);
+  line-height: 1.4;
+}
+
+/* ── 집사 한마디 ── */
+.tip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+}
+
+/* ── 방치 안내 모드 — 선반 이동 가이드 ── */
+.guide {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.guide li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.stepNo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: var(--text-small);
+  font-weight: 800;
+}
+
+.mascotLine {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-display);
+  line-height: 1;
+  text-align: center;
+}
