@@ -13,7 +13,8 @@
     "dev:server": "npm run dev --workspace server",
     "build": "npm run build --workspace client",
     "preview": "npm run preview --workspace client",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "check:mocks": "node client/src/mocks/validate.js"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
