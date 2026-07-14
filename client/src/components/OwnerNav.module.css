@@ -1,0 +1,166 @@
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 232px;
+  flex: none;
+  padding: var(--space-4) var(--space-2);
+  border-right: 1px solid var(--color-border);
+  background: var(--color-card);
+}
+
+/* ── 브랜드 ── */
+.brand {
+  padding: 0 var(--space-2);
+}
+
+.brandName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-subtitle);
+  font-weight: 800;
+}
+
+.mascot {
+  font-size: var(--text-heading);
+  line-height: 1;
+}
+
+.store {
+  margin: 4px 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+}
+
+/* ── 메뉴 ── */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 접어둔 확장 목록 — 기본은 닫혀 있다 */
+.later {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.laterSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 10px var(--space-2);
+  border-radius: var(--radius-button);
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.laterSummary::-webkit-details-marker {
+  display: none;
+}
+
+/* 펼침 표시 — 열리면 아래를 가리킨다 */
+.laterSummary::before {
+  content: "›";
+  display: inline-block;
+  width: 10px;
+  font-size: var(--text-body);
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.later[open] .laterSummary::before {
+  transform: rotate(90deg);
+}
+
+.count {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: var(--radius-badge);
+  background: var(--color-bg);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  padding: 10px var(--space-2);
+  border: none;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  text-align: left;
+}
+
+/* 확장 항목은 눌리지 않는다. 눌려서 아무 일도 안 일어나면 "만들다 만 것"으로 보인다 */
+.item:disabled {
+  color: var(--color-text-sub);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 800;
+  opacity: 1;
+}
+
+.active:disabled {
+  opacity: 1;
+}
+
+.icon {
+  font-size: var(--text-body);
+  line-height: 1;
+}
+
+.note {
+  margin-left: auto;
+  padding: 2px 6px;
+  border-radius: var(--radius-badge);
+  background: var(--color-bg);
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+.footnote {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-input);
+  background: var(--color-bg);
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
+/* 좁은 화면에서는 상단 가로 배치로 접는다 */
+@media (max-width: 900px) {
+  .nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .group {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .item {
+    width: auto;
+  }
+}
