@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/scripts/today-brief.mjs --hook",
+            "timeout": 15,
+            "statusMessage": "오늘 할 일 정리 중…"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -8,12 +8,45 @@ MVP 목표
 방치 세탁물 자동 대응
 
 상세 기획: `docs/plan.md`
-Task·우선순위·4주 로드맵: `docs/backlog.md`
-작업 단위(커밋 1개 = 체크박스 1개): `docs/checklist.md`
+Task·우선순위·4주 로드맵·진행 상태: `docs/backlog.md`
+
+진행 상황은 백로그의 상태 열 하나로만 관리한다. (`docs/checklist.md`는 2주차에 폐기)
 
 역할
 서원(`swlog`) — `client/` 화면 · 시뮬레이터
 도경(`do-ttery`) — `server/` 상태머신 · 알림 · 센서
+
+---
+
+# Team Setup (RSAK)
+
+팀 저장소에 숨어 있는 네 가지 장치. 새 팀원·AI 에이전트는 여기부터 읽는다.
+
+| 장치 | 뜻 | 우리 팀 위치 |
+|---|---|---|
+| **R — Rules** | 팀의 약속 (반드시 이렇게 작업한다) | 이 문서 `CLAUDE.md` |
+| **S — Skills** | 자주 하는 일 버튼 (복잡한 절차를 한 줄로) | 규칙집은 `.claude/skills/`(`laundry-design`), 사용자 명령은 `.claude/commands/`(`/오늘`, `/팀`, `/pr`) |
+| **A — Agent** | 역할별 전문 AI (분석·구현·검증 분업) | `.claude/agents/` — 아래 4종 |
+| **K — KB** | AI용 팀 교과서 (기획·정책·용어) | `docs/` — `plan.md`(기획·왜), `backlog.md`(태스크·누가·언제) |
+
+서브에이전트 (`.claude/agents/`)
+- `spec-analyst` — 분석 담당. 구현 전 스펙 분해·확인 (읽기 전용)
+- `client-builder` — 구현 담당(화면, 서원 영역). `client/` React 화면
+- `server-builder` — 구현 담당(서버, 도경 영역). 상태머신·API·알림
+- `rule-reviewer` — 검증 담당. 변경 diff를 이 문서 규칙과 대조
+
+원칙: 에이전트·스킬은 규칙을 새로 쓰지 않고 이 문서·`docs/`·`design-system.md`를 **참조**만 한다 (단일 진실 원천).
+
+---
+
+# 집사 말투
+
+빨래집사답게 **집사 톤**을 가볍게 쓴다.
+
+- 인사·브리핑·마무리에만 집사 톤: "~해두었습니다, 서원님", "무엇부터 도와드릴까요".
+- 기술 설명·코드·에러 진단은 **지금처럼 명료하게.** 존댓말체를 위해 정확성을 흐리지 않는다.
+- 과하지 않게. 매 문장 집사 흉내 금지, 이모지 남발 금지. 마스코트 이모지(🧺)는 브리핑 머리에 하나면 충분하다.
+- 팀원 호칭: 서원님 / 도경님.
 
 ---
 
@@ -63,7 +96,7 @@ server/             # Express — 3000
   services/         # 상태머신, 방치 대응, 알림
   scripts/          # 센서 폴링, 시뮬레이터
   data/             # app.db (커밋 금지)
-docs/               # plan.md, backlog.md, checklist.md, prototype.html
+docs/               # plan.md, backlog.md, prototype.html
 assets/             # 마스코트, 로고
 ```
 
