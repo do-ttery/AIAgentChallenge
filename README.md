@@ -7,8 +7,7 @@
 | 문서 | 답하는 질문 |
 |---|---|
 | [기획서 `plan.md`](docs/plan.md) | **왜** 만드는가 — 문제 정의 · 시나리오 · 성공 지표 |
-| [**백로그 `backlog.md`**](docs/backlog.md) | **무엇을 · 언제 · 누가** — Task 26개 · 우선순위 · 4주 로드맵 |
-| [체크리스트 `checklist.md`](docs/checklist.md) | **어떻게** 하는가 — 커밋 1개 = 체크박스 1개 |
+| [**백로그 `backlog.md`**](docs/backlog.md) | **무엇을 · 언제 · 누가** — Task 27개 · 우선순위 · 4주 로드맵 · **진행 상태** |
 | [`CLAUDE.md`](CLAUDE.md) | 구현 규칙 · 상세 설계 (API Spec · Data Model · State Machine) |
 | [프로토타입](docs/prototype.html) | 화면 시안 (순수 HTML/CSS) |
 
@@ -146,7 +145,7 @@ npm run build   # 프로덕션 빌드
   /services                # 상태 머신 · 방치 대응 · 알림
   /scripts                 # 센서 폴링 · 시뮬레이터
   /data                    # app.db (커밋 금지)
-/docs                      # plan.md · backlog.md · checklist.md · prototype.html
+/docs                      # plan.md · backlog.md · prototype.html
 CLAUDE.md                  # 구현 규칙 · 상세 설계
 ```
 
@@ -156,9 +155,9 @@ CLAUDE.md                  # 구현 규칙 · 상세 설계
 
 작업 전에 [CLAUDE.md](CLAUDE.md)를 먼저 읽습니다. 화면·컴포넌트를 만들 때는 디자인 시스템(`laundry-design` 스킬)을 적용하고, CLAUDE.md에 없는 결정이 필요하면 임의로 정하지 않고 팀에 묻습니다.
 
-작업을 시작할 때는 [백로그](docs/backlog.md)에서 Task를 고르고 상태를 `🟡 진행`으로 바꿉니다. 둘이 같은 걸 잡는 사고를 막는 유일한 장치입니다.
+작업을 시작할 때는 [백로그](docs/backlog.md)에서 Task를 고르고 상태를 `🟡 진행`으로 바꿉니다. 둘이 같은 걸 잡는 사고를 막는 유일한 장치입니다. 끝나면 `✅ 완료`로 바꿉니다 — **진행 상황을 적어두는 곳은 백로그 하나뿐입니다.**
 
-커밋은 `타입: 요약` 형식으로 작성하며, [체크리스트](docs/checklist.md)의 체크박스 1개를 커밋 1개로 하는 것을 기본으로 합니다.
+커밋은 `타입: 요약` 형식으로, 되돌릴 수 있는 가장 작은 단위로 나눕니다.
 
 ```bash
 git commit -m "feat: QR 랜딩 페이지 알림 신청 버튼 구현"
