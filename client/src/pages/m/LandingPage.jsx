@@ -131,7 +131,12 @@ export default function LandingPage() {
       )}
 
       {(status === "DONE" || status === "ABANDONED") && (
-        <Finished name={name} session={session} waiting={status === "ABANDONED"} />
+        <Finished
+          name={name}
+          session={session}
+          waiting={status === "ABANDONED"}
+          subscribed={session.subscriberCount > 0}
+        />
       )}
 
       {status === "COLLECTED" && (
@@ -182,8 +187,20 @@ function Progress({ session, status }) {
   );
 }
 
-/* 완료 · 수거 대기. waiting이면 30분을 넘긴 상태지만 문구는 똑같이 비난하지 않는다 */
-function Finished({ name, session, waiting }) {
+/* 완료 · 수거 대기. waiting이면 30분을 넘긴 상태지만 문구는 똑같이 비난하지 않는다.
+
+   subscribed(subscriberCount > 0)로 한 번 더 갈린다 — "미신청" 상태(T-14의 3번 상태).
+   알림 채널이 없으면 "수거 안내를 보내드려요"라는 약속을 할 수 없다 (CLAUDE.md:
+   알림 채널 없음 → 사장님 알림 + QR 랜딩 방치 안내 모드 전환). 못 지킬 약속 대신
+   지금 바로 찾아가 달라고 안내한다. waiting(=ABANDONED)일 때는 subscriberCount 0이면
+   이 컴포넌트 대신 NextCustomerGuide로 빠지므로 그 조합은 실제로는 나타나지 않는다. */
+function Finished({ name, session, waiting, subscribed }) {
+  const tileText = waiting
+    ? "다음 손님을 위해 세탁물을 찾아가 주세요. 오래 두면 집사가 사장님께 보관을 부탁드려요."
+    : subscribed
+      ? "30분이 지나면 다음 손님을 위해 수거 안내를 한 번 더 보내드려요."
+      : "지금은 알림을 보내드릴 방법이 없어요. 잊지 말고 빨리 찾아가 주세요 — 오래 걸리면 사장님께 도움을 요청드릴게요.";
+
   return (
     <>
       <div className={styles.card}>
@@ -204,13 +221,9 @@ function Finished({ name, session, waiting }) {
         </p>
       </div>
 
-      <p className={`${styles.tile} ${waiting ? styles.tileWarn : ""}`}>
-        <span className={styles.tileIcon}>{waiting ? "🧺" : "⏱️"}</span>
-        <span>
-          {waiting
-            ? "다음 손님을 위해 세탁물을 찾아가 주세요. 오래 두면 집사가 사장님께 보관을 부탁드려요."
-            : "30분이 지나면 다음 손님을 위해 수거 안내를 한 번 더 보내드려요."}
-        </span>
+      <p className={`${styles.tile} ${waiting || !subscribed ? styles.tileWarn : ""}`}>
+        <span className={styles.tileIcon}>{waiting ? "🧺" : subscribed ? "⏱️" : "🔕"}</span>
+        <span>{tileText}</span>
       </p>
     </>
   );
