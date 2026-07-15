@@ -8,17 +8,20 @@ Tapo P110M 스마트플러그에서 전력(W)을 읽어
 
 개발 경로 == 운영 경로. 시뮬레이터도, 이 스크립트도 같은 POST /ingest/:machineId 를 쓴다.
 
+라이브러리: `tapo` (python-kasa 는 P110M 의 TPAP 암호화 미지원이라 사용 불가).
+
 ────────────────────────────────────────────────────────────────
-매장에서 할 일은 딱 하나: kasa discover 로 찾은 IP 를 --host 에 넣는다.
-    kasa discover --username <TAPO_이메일> --password <TAPO_비번>
+TAPO 계정(이메일)·비번은 필수. 매장에서 할 일은 IP 를 --host 에 넣는 것.
+    export TAPO_USERNAME="이메일"  TAPO_PASSWORD="비번"
     python power_poll.py --host 192.168.0.xx --interval 1 --no-post   # 실측(1초)
+IP 는 Tapo 앱의 기기 설정에서, 또는 `python -c "..."` 디스커버리로 확인.
 ────────────────────────────────────────────────────────────────
 
 실측 주의 (backlog T-05):
   운영 폴링은 5초지만, 실측만큼은 --interval 1 로 찍는다.
-  20kg·1.1kW(히터 없음) 세탁기는 세탁 중 텀블 휴지기에 전력이 0W 근처로 떨어진다.
-  이 휴지기가 몇 초인지 먼저 재야 종료 판정 "유지" 시간을 정할 수 있다.
-  5초 폴링이 휴지기보다 성기면 통째로 놓친다 → 1초로 먼저 확인.
+  20kg·1.1kW(히터 없음) 세탁기는 세탁 중 텀블 휴지기에 전력이 ~10W 로 떨어진다.
+  이 휴지기가 몇 초인지 재야 종료 판정 "유지" 시간을 정할 수 있다.
+  헹굼 3회라 중간 탈수 스파이크가 여러 번 튈 수 있으니 곡선 전체를 남긴다.
 """
 
 import argparse
@@ -30,20 +33,16 @@ import sys
 from datetime import datetime, timezone
 
 try:
-    import kasa  # noqa: F401
-    from kasa import Discover
+    from tapo import ApiClient
 except ImportError:
-    sys.exit("python-kasa 가 없습니다.  pip install -r requirements.txt")
+    sys.exit("tapo 라이브러리가 없습니다.  pip install -r requirements.txt")
 
-try:
-    import urllib.request
-    import json as _json
-except ImportError:  # 표준 라이브러리라 사실상 없음
-    urllib = None
+import json as _json
+import urllib.request
 
 
 # ── 매장에서 채울 단 한 줄 ─────────────────────────────────────
-# kasa discover 로 찾은 IP. --host 로 넘기면 이 값은 무시된다.
+# 플러그 IP. --host 로 넘기면 이 값은 무시된다.
 HOST = ""
 # ───────────────────────────────────────────────────────────────
 
@@ -62,32 +61,16 @@ def default_csv_path() -> str:
     return f"power_{stamp}.csv"
 
 
-async def read_watts(dev) -> float:
-    """python-kasa 버전 차이를 흡수해 현재 소비전력(W)을 돌려준다."""
-    await dev.update()
-    # kasa >= 0.7 : Energy 모듈
-    try:
-        from kasa import Module
-        energy = dev.modules[Module.Energy]
-        if energy.current_consumption is not None:
-            return float(energy.current_consumption)
-    except Exception:
-        pass
-    # 구버전 폴백
-    em = getattr(dev, "emeter_realtime", None)
-    if em:
-        if em.get("power") is not None:
-            return float(em["power"])
-        if em.get("power_mw") is not None:
-            return float(em["power_mw"]) / 1000.0
-    raise RuntimeError("전력값을 읽지 못했습니다 (emeter 미지원 기기?)")
-
-
 async def connect(host: str, username: str, password: str):
-    """P110M 은 KLAP 프로토콜이라 TAPO 계정 자격증명이 필요하다."""
-    if username and password:
-        return await Discover.discover_single(host, username=username, password=password)
-    return await Discover.discover_single(host)
+    """P110M 은 전력 모니터링 플러그. tapo 의 p110 핸들러로 연결한다."""
+    client = ApiClient(username, password)
+    return await client.p110(host)
+
+
+async def read_watts(dev) -> float:
+    """현재 소비전력(W)."""
+    power = await dev.get_current_power()
+    return float(power.current_power)
 
 
 def post_ingest(server: str, machine_id: str, watt: float) -> None:
@@ -104,10 +87,12 @@ def post_ingest(server: str, machine_id: str, watt: float) -> None:
 async def run(args) -> None:
     host = args.host or HOST
     if not host:
-        sys.exit("IP 가 비어 있습니다.  kasa discover 로 찾아 --host 로 넘기세요.")
+        sys.exit("IP 가 비어 있습니다.  --host 로 넘기세요.")
 
     username = args.username or os.environ.get("TAPO_USERNAME", "")
     password = args.password or os.environ.get("TAPO_PASSWORD", "")
+    if not (username and password):
+        sys.exit("TAPO 계정이 필요합니다.  --username/--password 또는 env TAPO_USERNAME/TAPO_PASSWORD")
 
     csv_path = args.csv or default_csv_path()
     stop = asyncio.Event()
@@ -133,7 +118,7 @@ async def run(args) -> None:
             try:
                 if dev is None:
                     dev = await connect(host, username, password)
-                    print(f"연결됨: {getattr(dev, 'alias', host)}")
+                    print(f"연결됨: {host}")
                     backoff_i = 0
 
                 watt = await read_watts(dev)
@@ -168,8 +153,8 @@ async def run(args) -> None:
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="빨래집사 전력 폴링 (P110M)")
-    p.add_argument("--host", help="플러그 IP (kasa discover 로 확인). 비우면 파일 상단 HOST 사용")
+    p = argparse.ArgumentParser(description="빨래집사 전력 폴링 (P110M, tapo)")
+    p.add_argument("--host", help="플러그 IP. 비우면 파일 상단 HOST 사용")
     p.add_argument("--machine-id", default=DEFAULT_MACHINE_ID, help=f"기계 ID (기본 {DEFAULT_MACHINE_ID})")
     p.add_argument("--interval", type=float, default=DEFAULT_INTERVAL,
                    help=f"폴링 간격 초 (기본 {DEFAULT_INTERVAL}, 실측은 1)")
