@@ -1,3 +1,4 @@
 # 빨래집사 센서 폴링 (T-04)
-# P110M 은 KLAP 프로토콜이라 최신 python-kasa 가 필요하다.
-python-kasa>=0.7.0
+# P110M 은 TPAP 암호화라 python-kasa(미지원) 대신 tapo 라이브러리를 쓴다.
+# tapo 는 T110(문열림)·H100(허브)도 지원 → T-06/T-07 에서도 재사용.
+tapo>=0.9.0
