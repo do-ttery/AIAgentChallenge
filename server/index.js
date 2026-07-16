@@ -1,9 +1,16 @@
+import "dotenv/config";
+
 import cors from "cors";
 import express from "express";
 
 import ingestRouter from "./routes/ingest.js";
+import { initDb } from "./services/db.js";
 
 const PORT = process.env.PORT || 3000;
+
+// 서버 시작 시 Supabase 클라이언트를 초기화한다 (T-09).
+// 테이블 자체는 server/db/schema.sql을 Supabase SQL Editor에서 미리 실행해둬야 한다.
+initDb();
 
 const app = express();
 app.use(cors());
