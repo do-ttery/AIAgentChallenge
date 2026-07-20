@@ -197,6 +197,35 @@
   font-size: var(--text-caption);
 }
 
+/* ── 조회 오류 ── 시스템 오류라 관리자 화면 예외로 danger색을 쓴다 (CLAUDE.md 빨강 정책).
+   아직 아무 데이터도 못 받아온 최초 로딩 실패일 때만 화면 전체를 이 카드로 대체한다. */
+.errorCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-danger);
+  box-shadow: var(--shadow-card);
+}
+
+.errorText {
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 700;
+  font-size: var(--text-body);
+}
+
+/* 이미 받아온 목록이 있는 상태에서 폴링만 실패했을 때 — 화면을 비우지 않고 조용히 알린다 */
+.errorNote {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
 /* ── 섹션 제목 ── */
 .sectionHead {
   display: flex;
