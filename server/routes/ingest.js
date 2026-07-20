@@ -1,5 +1,7 @@
 import { Router } from "express";
 
+import { handleIngestEvent } from "../services/stateMachine.js";
+
 // 센서 데이터 단일 입구 (T-08)
 //   POST /ingest/:machineId
 //     { "type": "watt", "value": 512 }   # 전력 (5초 간격)
@@ -7,13 +9,13 @@ import { Router } from "express";
 //     { "type": "door_close" }            # 문 닫힘
 //
 // 개발(시뮬레이터 T-21)·운영(폴링 스크립트 T-04)이 같은 이 엔드포인트를 쓴다.
-// T-08 은 "받기"까지만 한다. 저장(T-09)·상태 판정(T-10)은 아직 붙이지 않는다.
+// 저장(reading)·상태 판정(T-10 상태 머신)은 services/stateMachine.js 에서 처리한다.
 
 const VALID_TYPES = ["watt", "door_open", "door_close"];
 
 const router = Router();
 
-router.post("/:machineId", (req, res) => {
+router.post("/:machineId", async (req, res) => {
   const { machineId } = req.params;
   const { type, value } = req.body ?? {};
 
@@ -34,11 +36,16 @@ router.post("/:machineId", (req, res) => {
     });
   }
 
-  // 저장·상태 판정은 다음 Task. 지금은 받았다는 로그만 남긴다.
   const detail = type === "watt" ? `${value}W` : type;
   console.log(`[ingest] ${machineId} ← ${detail}`);
 
-  return res.status(202).json({ ok: true, machineId, type });
+  try {
+    const result = await handleIngestEvent(machineId, type, value);
+    return res.status(202).json({ ok: true, machineId, type, ...result });
+  } catch (err) {
+    console.error(`[ingest] ${machineId} 처리 실패:`, err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 export default router;
