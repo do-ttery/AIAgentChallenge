@@ -1,5 +1,6 @@
 import { getDb } from "./db.js";
 import { START_W, SPIN_W, DONE_W, DONE_HOLD_SEC } from "./constants.js";
+import { scheduleAbandonCheck, cancelAbandonTimers } from "./abandonment.js";
 
 // 상태 머신 (T-10)
 // POST /ingest/:machineId 로 들어온 이벤트 하나를 6상태 전이 규칙에 따라 처리한다.
@@ -107,6 +108,8 @@ async function handleWatt(db, machine, session, machineId, value, now) {
       await setMachineStatus(db, machineId, "DONE");
       doneCandidateSince.delete(machineId);
       log(machineId, "SPIN", "DONE", `${DONE_W}W 이하가 ${DONE_HOLD_SEC}초 유지`);
+      // DONE → ABANDONED는 시간 기반 전이라(T-11) 방치 타이머를 여기서 건다.
+      scheduleAbandonCheck(machineId, session.id, now);
       return { transitioned: true };
     }
     return { transitioned: false };
@@ -115,6 +118,7 @@ async function handleWatt(db, machine, session, machineId, value, now) {
   if (status === "DONE" && value >= START_W) {
     // 동일 기계 다음 세탁 시작 — 이전 세션을 소급으로 수거 처리한다.
     await updateSessionState(db, session.id, "COLLECTED");
+    cancelAbandonTimers(session.id);
     log(machineId, "DONE", "COLLECTED", "다음 세탁 시작 감지(소급 처리)");
 
     const startedAt = new Date(now).toISOString();
@@ -151,6 +155,7 @@ async function handleDoorOpen(db, machine, session, machineId) {
 
   await updateSessionState(db, session.id, "COLLECTED");
   await setMachineStatus(db, machineId, "IDLE");
+  cancelAbandonTimers(session.id);
   log(machineId, status, "COLLECTED", "door_open");
   return { transitioned: true };
 }

@@ -248,7 +248,7 @@ Supabase(PostgreSQL) 테이블. 5개만 사용한다. 임의로 추가하지 않
 |---|---|---|
 | `machine` | id, name, status, plugId, doorSensorId | 기계 목록·현재 상태·센서 매핑 |
 | `session` | id, machineId, startedAt, endedAt, state | 세탁 1회 = 세션 (익명 허용, QR 무관 생성) |
-| `subscription` | id, sessionId, endpoint, keys, createdAt | QR 알림 신청 (opt-in) |
+| `subscription` | id, sessionId, endpoint, keys, createdAt | QR 알림 신청 (opt-in). `sessionId`는 nullable — NULL이면 세션에 묶이지 않은 사장님(매장) 구독 (2026-07-21 결정) |
 | `reading` | id, machineId, ts, type, value | 전력·도어 이벤트 로그 |
 | `notification` | id, sessionId, type, sentAt | 발송 이력 (중복 방지 근거) |
 
@@ -322,6 +322,12 @@ ABANDONED → COLLECTED  (방치 후 수거)
 - 고객 비난 금지: "방치하셨습니다" ❌ → "찾아가지 않은 세탁물이 있어요" ⭕
 - 시간은 점이 아니라 범위로: "18:45~18:55"
 - 같은 세션에 같은 종류의 알림은 1회만 (notification 테이블로 중복 방지)
+
+**사장님 알림(OWNER_ALERT) 발송 채널 (2026-07-21 결정)**: OWNER_ALERT는 정의상 그 세션에
+subscription이 없을 때만 발생하는 분기라, 세션에 묶인 구독으로는 실제로 발송할 대상이 항상 0건이었다.
+`subscription.session_id`를 nullable로 바꿔 `session_id IS NULL`인 row를 세션에 안 묶인 사장님(매장)
+구독으로 쓴다. 매장은 1곳만 운영한다는 전제(Architecture 섹션 참고)라 사장님 구독은 여러 개(사장님
+폰·카운터 태블릿 등) 있을 수 있어도 특정 세션에는 묶이지 않는다.
 
 ---
 
