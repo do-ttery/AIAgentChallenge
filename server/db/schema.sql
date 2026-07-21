@@ -26,11 +26,17 @@ create index if not exists idx_session_machine_id on session(machine_id);
 
 create table if not exists subscription (
   id         uuid primary key default gen_random_uuid(),
-  session_id uuid not null references session(id),
+  session_id uuid references session(id), -- nullable: NULL이면 사장님(매장) 구독 (2026-07-21 결정)
   endpoint   text not null,
   keys       text not null, -- Web Push {p256dh, auth}를 JSON.stringify한 문자열 (2026-07-16 결정)
   created_at timestamptz not null default now()
 );
+
+-- 2026-07-21: OWNER_ALERT가 실제로 발송되려면 특정 세션에 묶이지 않는 사장님용 구독 채널이
+-- 필요해 session_id를 nullable로 바꿨다. create table if not exists는 이미 배포된 테이블에는
+-- 반영되지 않으므로, not null 제약이 남아있는 기존 배포 환경에서도 안전하게 적용되도록
+-- alter table을 별도로 둔다(이미 nullable이면 아무 일도 하지 않는다 — idempotent).
+alter table subscription alter column session_id drop not null;
 
 create index if not exists idx_subscription_session_id on subscription(session_id);
 

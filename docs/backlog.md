@@ -148,8 +148,8 @@ State Machine의 종료 판정은 이렇게 정의돼 있다.
 | T-08 | Express 서버 + `POST /ingest/:machineId` — 전력 · 도어 이벤트 단일 입구 | P0 | 도경 | 2 | T-01 | ✅ |
 | T-09 | Supabase 5개 테이블 + 클라이언트 초기화 + 세탁기 4대 시드 (`machine` `session` `subscription` `reading` `notification`) — 2026-07-16 SQLite→Supabase 전환 결정. `subscription.keys`는 TEXT(JSON 문자열). **2026-07-20 확인: 실제 Supabase 프로젝트 생성·`.env` 키 발급까지 완료(서원). DB 연결·시드 4대 조회 확인됨** | P0 | 도경 | 3 | T-08 | ✅ |
 | T-10 | **상태 머신** — 6상태 전이 · 중복 전이 방지 · 미정의 이벤트 무시 · 전이 로그 — 2026-07-20 구현·실DB 테스트·검증 완료 (`server/services/stateMachine.js`). ABANDONED→COLLECTED·COLLECTED시 machine.status IDLE 리셋 결정 CLAUDE.md 반영 | P0 | 도경 | 3 | T-05, T-09 | ✅ |
-| T-11 | 방치 자동 대응 — 30분 타이머 · 수거 시 취소 · 상수 분리 · 처리 결과 로그 | P0 | 도경 | 3 | T-10 | ⬜ |
-| T-12 | Web Push — VAPID · Service Worker · 구독 저장 · 알림 5종 문구 · 중복 발송 방지 | P0 | 도경 | 3 | T-09 | ⬜ |
+| T-11 | 방치 자동 대응 — 30분 타이머 · 수거 시 취소 · 상수 분리 · 처리 결과 로그 — 2026-07-21 구현 완료(`server/services/abandonment.js`). 1차/2차 수거 알림·OWNER_ALERT 분기까지 연결됨 | P0 | 도경 | 3 | T-10 | ✅ |
+| T-12 | Web Push — VAPID · Service Worker · 구독 저장 · 알림 5종 문구 · 중복 발송 방지 — 2026-07-21: 백엔드(VAPID 초기화·`POST /api/subscriptions`·알림 5종 문구·notification 테이블 기반 중복 방지) 완료. **Service Worker(client/)는 아직 없음** — T-18(구독 플로우)에서 마저 붙인다 | P0 | 도경 | 3 | T-09 | 🟡 |
 | T-13 | 조회 API — 기계 목록 · 기계별 상태 · 최근 알림 (대시보드·랜딩이 소비) — 2026-07-20 결정: 담당 도경→서원. 실제 Supabase 프로젝트 생성(T-09 인프라 잔여분)까지 서원이 먼저 끝내야 착수 가능 | P0 | 서원 | 3 | T-09 | ⬜ |
 
 ### 프론트

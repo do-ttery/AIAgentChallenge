@@ -4,13 +4,19 @@ import cors from "cors";
 import express from "express";
 
 import ingestRouter from "./routes/ingest.js";
+import subscriptionsRouter from "./routes/subscriptions.js";
 import { initDb } from "./services/db.js";
+import { initPush } from "./services/push.js";
 
 const PORT = process.env.PORT || 3000;
 
 // 서버 시작 시 Supabase 클라이언트를 초기화한다 (T-09).
 // 테이블 자체는 server/db/schema.sql을 Supabase SQL Editor에서 미리 실행해둬야 한다.
 initDb();
+
+// Web Push VAPID 설정 초기화 (T-12). .env에 VAPID_PUBLIC/VAPID_PRIVATE가 없으면 경고만 남기고
+// 발송은 계속 건너뛴다 — 알림 미설정이 서버 기동 자체를 막지 않는다.
+initPush();
 
 const app = express();
 app.use(cors());
@@ -23,6 +29,9 @@ app.get("/api/health", (req, res) => {
 // 센서 데이터 입구는 POST /ingest/:machineId 하나로 통일한다 (T-08)
 // 라우트는 routes/, 상태 머신·방치 대응·알림은 services/ 아래에 둔다
 app.use("/ingest", ingestRouter);
+
+// QR 랜딩 알림 신청 저장 (T-12)
+app.use("/api/subscriptions", subscriptionsRouter);
 
 app.listen(PORT, () => {
   console.log(`빨래집사 server → http://localhost:${PORT}`);
