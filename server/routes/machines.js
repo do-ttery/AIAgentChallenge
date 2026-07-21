@@ -16,6 +16,12 @@ import { STANDARD_COURSE_MIN, ETA_RANGE_MIN } from "../services/constants.js";
 
 const router = Router();
 
+// machine.id는 uuid 컬럼이라, uuid 형식이 아닌 값으로 조회하면 Supabase가
+// "결과 없음"이 아니라 "invalid input syntax for type uuid" 500 에러를 던진다.
+// QR 오타 등 잘못된 id도 손님 입장에선 "기계를 찾을 수 없음"과 같으므로,
+// DB에 물어보기 전에 형식부터 걸러 404로 통일한다.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function computeEta(startedAtIso) {
   const startedAtMs = new Date(startedAtIso).getTime();
   const etaFrom = new Date(
@@ -108,6 +114,10 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) {
+    return res.status(404).json({ ok: false, error: "기계를 찾을 수 없습니다." });
+  }
+
   const db = getDb();
 
   const { data, error } = await db
