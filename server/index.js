@@ -4,6 +4,7 @@ import cors from "cors";
 import express from "express";
 
 import machinesRouter from "./routes/machines.js";
+import notificationsRouter from "./routes/notifications.js";
 import ingestRouter from "./routes/ingest.js";
 import { initDb } from "./services/db.js";
 
@@ -25,8 +26,9 @@ app.get("/api/health", (req, res) => {
 // 라우트는 routes/, 상태 머신·방치 대응·알림은 services/ 아래에 둔다
 app.use("/ingest", ingestRouter);
 
-// 조회 API — 지금은 GET /api/machines 만 구현한다 (T-13 최소 범위)
+// 조회 API (T-13)
 app.use("/api/machines", machinesRouter);
+app.use("/api/notifications", notificationsRouter);
 
 app.listen(PORT, () => {
   console.log(`빨래집사 server → http://localhost:${PORT}`);
