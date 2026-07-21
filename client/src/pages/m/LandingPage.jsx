@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getMachine } from "../../mocks/machines.js";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import { formatElapsed, formatRange, formatTime, progressPercent } from "../../utils/time.js";
 import styles from "./LandingPage.module.css";
 
 /* T-14 + T-15 — 고객 화면. QR을 찍으면 열리는 단 하나의 화면이다.
-   T-17에서 getMachine을 fetch로 바꾸고 5초 폴링을 붙인다.
+   T-17: getMachine(mock)을 GET /api/machines/:id fetch로 교체하고 5초 폴링을 붙였다.
 
    고객은 QR을 한 번 찍는다. 신청도 여기서, 진행 확인도 여기서, 수거 확인도 여기서 한다.
    페이지를 옮겨 다니게 하지 않는다 — 화면은 하나고, 상태에 따라 내용이 갈린다.
@@ -38,17 +37,92 @@ function stepIndex(status) {
   return 2; // 끝난 세션(DONE·COLLECTED·ABANDONED)은 전부 마지막 단계다
 }
 
+/* 5초 폴링 간격 — 대시보드(OwnerDashboard)와 동일한 값을 쓴다 */
+const POLL_INTERVAL_MS = 5000;
+
 export default function LandingPage() {
   const { machineId } = useParams();
-  const machine = getMachine(machineId);
+  const [machine, setMachine] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState(null);
   const [subscribed, setSubscribed] = useState(false);
 
-  if (!machine) {
+  useEffect(() => {
+    let cancelled = false;
+
+    /* machineId가 바뀌면(다른 QR로 이동) 이전 기계의 데이터를 들고 있으면 안 된다 */
+    setMachine(null);
+    setLoading(true);
+    setNotFound(false);
+    setError(null);
+
+    async function loadMachine() {
+      try {
+        const res = await fetch(`/api/machines/${machineId}`);
+        if (cancelled) return;
+
+        if (res.status === 404) {
+          setMachine(null);
+          setNotFound(true);
+          setError(null);
+          return;
+        }
+        if (!res.ok) throw new Error(`서버 응답 오류 (HTTP ${res.status})`);
+
+        const data = await res.json();
+        if (cancelled) return;
+        setMachine(data);
+        setNotFound(false);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        console.error("[LandingPage] /api/machines/:id 조회 실패", err);
+        setError("기계 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadMachine();
+    const interval = setInterval(loadMachine, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [machineId]);
+
+  if (loading) {
+    return (
+      <Shell>
+        <div className={styles.card}>
+          <h1 className={styles.cardTitle}>불러오는 중이에요</h1>
+          <p className={styles.sub}>세탁기 정보를 확인하고 있어요. 잠시만 기다려 주세요.</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (notFound) {
     return (
       <Shell>
         <div className={styles.card}>
           <h1 className={styles.cardTitle}>기계를 찾지 못했어요</h1>
           <p className={styles.sub}>QR을 다시 찍어 주세요. 계속 안 되면 사장님께 알려 주세요.</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (error && !machine) {
+    return (
+      <Shell>
+        <div className={styles.card}>
+          <h1 className={styles.cardTitle}>연결이 불안정해요</h1>
+          <p className={styles.sub}>{error}</p>
+          <button type="button" className={styles.button} onClick={() => window.location.reload()}>
+            다시 시도
+          </button>
         </div>
       </Shell>
     );
@@ -69,6 +143,9 @@ export default function LandingPage() {
 
   return (
     <Shell>
+      {/* 이미 받아온 정보가 있는데 폴링만 실패한 경우 — 화면을 비우지 않고 조용히 알린다 */}
+      {error && <p className={styles.staleNote}>{error} · 마지막으로 확인한 정보를 보여드리고 있어요.</p>}
+
       <section className={styles.hero}>
         <p className={styles.machineNo}>
           MACHINE {machineId.replace(/\D/g, "").padStart(2, "0")}

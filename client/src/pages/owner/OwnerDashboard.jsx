@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { RECENT_NOTIFICATIONS, NOTIFICATION_TYPE } from "../../mocks/notifications.js";
+import { NOTIFICATION_TYPE } from "../../mocks/notifications.js";
 import OwnerNav from "../../components/OwnerNav.jsx";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import { formatElapsed, formatRange, formatTime, progressPercent } from "../../utils/time.js";
 import styles from "./OwnerDashboard.module.css";
 
 /* T-16 사장님 대시보드.
-   T-17: 기계 목록은 GET /api/machines fetch로 교체 완료.
-   RECENT_NOTIFICATIONS(처리 내역)는 GET /api/notifications/recent가 아직 없어 mock 그대로 둔다.
-   아래 byUrgency·summarize·TodoCard·MachineCard·describe·Feed는 손대지 않는다.
+   T-17: 기계 목록(GET /api/machines)·처리 내역(GET /api/notifications/recent) 모두 fetch로 교체 완료.
+   NOTIFICATION_TYPE(알림 5종 enum)만 mocks에서 계속 가져다 쓴다 — 데이터가 아니라 타입 정의다.
+   아래 byUrgency·summarize·TodoCard·MachineCard·describe는 손대지 않는다.
 
    이 화면이 답해야 하는 질문은 하나다 — "지금 내가 손댈 게 있나?"
    그래서 맨 위가 "사장님 손이 필요해요"이고, 할 게 없으면 "다 괜찮아요"가 뜬다.
@@ -111,6 +111,12 @@ export default function OwnerDashboard() {
   const [error, setError] = useState(null);
   const [refreshedAt, setRefreshedAt] = useState(() => Date.now());
 
+  /* 처리 내역은 기계 목록과 다른 자원이라 loading/error를 따로 관리한다.
+     한쪽이 실패해도 다른 쪽 화면은 멀쩡해야 한다. */
+  const [rawNotifications, setRawNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifError, setNotifError] = useState(null);
+
   async function loadMachines() {
     try {
       const res = await fetch("/api/machines");
@@ -127,9 +133,29 @@ export default function OwnerDashboard() {
     }
   }
 
+  async function loadNotifications() {
+    try {
+      const res = await fetch("/api/notifications/recent");
+      if (!res.ok) throw new Error(`서버 응답 오류 (HTTP ${res.status})`);
+      const data = await res.json();
+      setRawNotifications(data);
+      setNotifError(null);
+    } catch (err) {
+      console.error("[OwnerDashboard] /api/notifications/recent 조회 실패", err);
+      setNotifError("최근 처리 내역을 불러오지 못했어요.");
+    } finally {
+      setNotifLoading(false);
+    }
+  }
+
   useEffect(() => {
+    /* 대시보드는 "5초마다 한 번" 갱신된다는 개념을 유지한다 — interval은 하나만 둔다 */
     loadMachines();
-    const interval = setInterval(loadMachines, POLL_INTERVAL_MS);
+    loadNotifications();
+    const interval = setInterval(() => {
+      loadMachines();
+      loadNotifications();
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
@@ -137,7 +163,7 @@ export default function OwnerDashboard() {
   const idle = rawMachines.filter((machine) => machine.status === "IDLE");
   const abandoned = rawMachines.filter((machine) => machine.status === "ABANDONED");
   const attention = rawMachines.filter((machine) => machine.needsAttention);
-  const handled = RECENT_NOTIFICATIONS.filter((n) => n.sessionState === "COLLECTED").length;
+  const handled = rawNotifications.filter((n) => n.sessionState === "COLLECTED").length;
 
   const machines = [...rawMachines].sort(byUrgency);
 
@@ -196,7 +222,29 @@ export default function OwnerDashboard() {
                 최근 처리 내역
                 <span className={styles.logNote}>집사가 {handled}건을 자동으로 해결했어요</span>
               </summary>
-              <Feed />
+              {notifLoading ? (
+                <p className={styles.logState}>불러오는 중이에요…</p>
+              ) : notifError && rawNotifications.length === 0 ? (
+                <div className={styles.logErrorWrap}>
+                  <section className={styles.errorCard}>
+                    <p className={styles.errorText}>{notifError}</p>
+                    <button
+                      type="button"
+                      className={styles.refreshButton}
+                      onClick={loadNotifications}
+                    >
+                      다시 시도
+                    </button>
+                  </section>
+                </div>
+              ) : rawNotifications.length === 0 ? (
+                <p className={styles.logState}>아직 처리한 내역이 없어요.</p>
+              ) : (
+                <>
+                  {notifError && <p className={styles.logState}>{notifError} · 마지막으로 불러온 내역을 보여드리고 있어요.</p>}
+                  <Feed notifications={rawNotifications} />
+                </>
+              )}
             </details>
           </>
         )}
@@ -265,10 +313,10 @@ function TodoCard({ abandoned, attention, handled }) {
   );
 }
 
-function Feed() {
+function Feed({ notifications }) {
   return (
     <ul className={styles.feed}>
-      {RECENT_NOTIFICATIONS.map((notification) => {
+      {notifications.map((notification) => {
         const { tag, tone, text } = describe(notification);
         return (
           <li key={notification.id} className={styles.feedItem}>

@@ -388,6 +388,18 @@
   padding-top: 0;
 }
 
+/* 처리 내역 로딩·빈 상태·폴링 실패 — Feed 자리에 들어가는 짧은 문구 */
+.logState {
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-3);
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+}
+
+.logErrorWrap {
+  margin: 0 var(--space-3) var(--space-3);
+}
+
 /* ── 처리 내역 ── */
 .feed {
   margin: 0;
