@@ -174,7 +174,7 @@ State Machine의 종료 판정은 이렇게 정의돼 있다.
 | T-10 | **상태 머신** — 6상태 전이 · 중복 전이 방지 · 미정의 이벤트 무시 · 전이 로그 — 2026-07-20 구현·실DB 테스트·검증 완료 (`server/services/stateMachine.js`). ABANDONED→COLLECTED·COLLECTED시 machine.status IDLE 리셋 결정 CLAUDE.md 반영 | P0 | 도경 | 3 | T-05, T-09 | ✅ |
 | T-11 | 방치 자동 대응 — 30분 타이머 · 수거 시 취소 · 상수 분리 · 처리 결과 로그 | P0 | 도경 | 3 | T-10 | ⬜ |
 | T-12 | Web Push — VAPID · Service Worker · 구독 저장 · 알림 5종 문구 · 중복 발송 방지 | P0 | 도경 | 3 | T-09 | ⬜ |
-| T-13 | 조회 API — 기계 목록 · 기계별 상태 · 최근 알림 (대시보드·랜딩이 소비) — 2026-07-20 결정: 담당 도경→서원. `GET /api/machines` 구현 완료(시드값 그대로, session은 T-10 전까지 null 고정), `GET /api/machines/:id`·`GET /api/notifications/recent`는 아직 | P0 | 서원 | 3 | T-09 | 🟡 |
+| T-13 | 조회 API — 기계 목록 · 기계별 상태 · 최근 알림 (대시보드·랜딩이 소비) — 2026-07-20 결정: 담당 도경→서원. `GET /api/machines`·`GET /api/machines/:id`·`GET /api/notifications/recent` 전부 구현 완료 (세션 조인 · eta 계산 · subscriberCount · 최근 알림 조인) | P0 | 서원 | 3 | T-09 | ✅ |
 
 ### 프론트
 
@@ -183,7 +183,7 @@ State Machine의 종료 판정은 이렇게 정의돼 있다.
 | T-14 | QR 랜딩 화면 `/m/:machineId` — mock 데이터 · 4개 상태(일반/신청완료/미신청/방치안내) | P0 | 서원 | 2 | T-02 | ✅ |
 | T-15 | 진행 화면 — mock 데이터 · 상태 배지 · 예상 종료 **시간 범위** · 진행 단계 | P0 | 서원 | 2 | T-02 | ✅ |
 | T-16 | 사장님 대시보드 `/owner` — mock 데이터 · 요약 3종 · 기계 카드 · 최근 처리 내역 | P0 | 서원 | 2 | T-02 | ✅|
-| T-17 | mock → 실제 API 교체 + 5초 폴링 · 로딩/오류 상태 — 2026-07-20: OwnerDashboard(기계 목록)는 `GET /api/machines` 연결 완료, LandingPage와 최근 처리 내역(RECENT_NOTIFICATIONS)은 아직 mock | P0 | 서원 | 3 | T-13 | 🟡 |
+| T-17 | mock → 실제 API 교체 + 5초 폴링 · 로딩/오류 상태 — 2026-07-21: LandingPage(`GET /api/machines/:id`)·대시보드 최근 처리 내역(`GET /api/notifications/recent`)까지 전부 fetch로 교체 완료. machineId 변경 시 재폴링, 404/일반 에러 구분, stale-but-shown 처리까지 반영 | P0 | 서원 | 3 | T-13 | ✅ |
 | T-18 | QR 알림 신청 플로우 — 권한 요청 · 구독 전송 · 거부 안내 · 진행 중 세탁 없음 안내 | P0 | 서원 | 3 | T-12 | ⬜ |
 | T-19 | 방치 분기 UI — QR 미신청 방치 표시 · 랜딩 방치 안내 모드 전환 | P1 | 서원 | 3 | T-11 | ⬜ |
 | T-20 | 승인 대기함 — **UI 자리만.** 기능 구현 금지 (MVP 범위 밖) | P2 | 서원 | 3 | T-16 | ⬜ |
