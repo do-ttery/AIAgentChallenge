@@ -3,6 +3,8 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 
+import machinesRouter from "./routes/machines.js";
+import notificationsRouter from "./routes/notifications.js";
 import ingestRouter from "./routes/ingest.js";
 import subscriptionsRouter from "./routes/subscriptions.js";
 import { initDb } from "./services/db.js";
@@ -32,6 +34,9 @@ app.use("/ingest", ingestRouter);
 
 // QR 랜딩 알림 신청 저장 (T-12)
 app.use("/api/subscriptions", subscriptionsRouter);
+// 조회 API (T-13)
+app.use("/api/machines", machinesRouter);
+app.use("/api/notifications", notificationsRouter);
 
 app.listen(PORT, () => {
   console.log(`빨래집사 server → http://localhost:${PORT}`);

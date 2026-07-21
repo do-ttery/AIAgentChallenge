@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { MACHINES } from "../../mocks/machines.js";
-import { RECENT_NOTIFICATIONS, NOTIFICATION_TYPE } from "../../mocks/notifications.js";
+import { useEffect, useState } from "react";
+import { NOTIFICATION_TYPE } from "../../mocks/notifications.js";
 import OwnerNav from "../../components/OwnerNav.jsx";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import { formatElapsed, formatRange, formatTime, progressPercent } from "../../utils/time.js";
 import styles from "./OwnerDashboard.module.css";
 
-/* T-16 사장님 대시보드 — mock 데이터.
-   T-17에서 위 두 mock import를 fetch로 바꾼다. 그 아래 코드는 손대지 않아야 한다.
+/* T-16 사장님 대시보드.
+   T-17: 기계 목록(GET /api/machines)·처리 내역(GET /api/notifications/recent) 모두 fetch로 교체 완료.
+   NOTIFICATION_TYPE(알림 5종 enum)만 mocks에서 계속 가져다 쓴다 — 데이터가 아니라 타입 정의다.
+   아래 byUrgency·summarize·TodoCard·MachineCard·describe는 손대지 않는다.
 
    이 화면이 답해야 하는 질문은 하나다 — "지금 내가 손댈 게 있나?"
    그래서 맨 위가 "사장님 손이 필요해요"이고, 할 게 없으면 "다 괜찮아요"가 뜬다.
@@ -99,22 +100,72 @@ function summarize(machine) {
   return "";
 }
 
+/* 5초 폴링 간격. 대시보드 안내 문구("5초마다 자동 갱신")와 값을 맞춘다 */
+const POLL_INTERVAL_MS = 5000;
+
 export default function OwnerDashboard() {
   /* 자동으로 5초마다 갱신되지만 손잡이는 하나 있어야 한다.
-     "지금 당장 확인하고 싶다"는 순간에 누를 게 없으면 사장님이 화면을 못 믿는다.
-
-     지금은 다시 그리는 것뿐이지만 그것만으로 경과 시간이 갱신된다
-     (endedAt은 고정이고 "32분째"는 Date.now() 기준으로 매번 계산되므로).
-     T-17에서 실제 재조회(fetch)에 연결한다. */
+     "지금 당장 확인하고 싶다"는 순간에 누를 게 없으면 사장님이 화면을 못 믿는다. */
+  const [rawMachines, setRawMachines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshedAt, setRefreshedAt] = useState(() => Date.now());
 
-  const running = MACHINES.filter((machine) => RUNNING_STATES.includes(machine.status));
-  const idle = MACHINES.filter((machine) => machine.status === "IDLE");
-  const abandoned = MACHINES.filter((machine) => machine.status === "ABANDONED");
-  const attention = MACHINES.filter((machine) => machine.needsAttention);
-  const handled = RECENT_NOTIFICATIONS.filter((n) => n.sessionState === "COLLECTED").length;
+  /* 처리 내역은 기계 목록과 다른 자원이라 loading/error를 따로 관리한다.
+     한쪽이 실패해도 다른 쪽 화면은 멀쩡해야 한다. */
+  const [rawNotifications, setRawNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifError, setNotifError] = useState(null);
 
-  const machines = [...MACHINES].sort(byUrgency);
+  async function loadMachines() {
+    try {
+      const res = await fetch("/api/machines");
+      if (!res.ok) throw new Error(`서버 응답 오류 (HTTP ${res.status})`);
+      const data = await res.json();
+      setRawMachines(data);
+      setError(null);
+    } catch (err) {
+      console.error("[OwnerDashboard] /api/machines 조회 실패", err);
+      setError("기계 목록을 불러오지 못했어요. 서버 연결 상태를 확인해 주세요.");
+    } finally {
+      setLoading(false);
+      setRefreshedAt(Date.now());
+    }
+  }
+
+  async function loadNotifications() {
+    try {
+      const res = await fetch("/api/notifications/recent");
+      if (!res.ok) throw new Error(`서버 응답 오류 (HTTP ${res.status})`);
+      const data = await res.json();
+      setRawNotifications(data);
+      setNotifError(null);
+    } catch (err) {
+      console.error("[OwnerDashboard] /api/notifications/recent 조회 실패", err);
+      setNotifError("최근 처리 내역을 불러오지 못했어요.");
+    } finally {
+      setNotifLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    /* 대시보드는 "5초마다 한 번" 갱신된다는 개념을 유지한다 — interval은 하나만 둔다 */
+    loadMachines();
+    loadNotifications();
+    const interval = setInterval(() => {
+      loadMachines();
+      loadNotifications();
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
+
+  const running = rawMachines.filter((machine) => RUNNING_STATES.includes(machine.status));
+  const idle = rawMachines.filter((machine) => machine.status === "IDLE");
+  const abandoned = rawMachines.filter((machine) => machine.status === "ABANDONED");
+  const attention = rawMachines.filter((machine) => machine.needsAttention);
+  const handled = rawNotifications.filter((n) => n.sessionState === "COLLECTED").length;
+
+  const machines = [...rawMachines].sort(byUrgency);
 
   return (
     <div className={styles.layout}>
@@ -124,11 +175,7 @@ export default function OwnerDashboard() {
         <header className={styles.head}>
           <h1 className={styles.greeting}>안녕하세요, 사장님</h1>
           <div className={styles.refresh}>
-            <button
-              type="button"
-              className={styles.refreshButton}
-              onClick={() => setRefreshedAt(Date.now())}
-            >
+            <button type="button" className={styles.refreshButton} onClick={loadMachines}>
               새로고침
             </button>
             <p className={styles.refreshNote}>
@@ -137,33 +184,70 @@ export default function OwnerDashboard() {
           </div>
         </header>
 
-        <TodoCard abandoned={abandoned} attention={attention} handled={handled} />
+        {loading ? (
+          <p className={styles.strip}>기계 목록을 불러오는 중이에요…</p>
+        ) : error && rawMachines.length === 0 ? (
+          <section className={styles.errorCard}>
+            <p className={styles.errorText}>{error}</p>
+            <button type="button" className={styles.refreshButton} onClick={loadMachines}>
+              다시 시도
+            </button>
+          </section>
+        ) : (
+          <>
+            {error && <p className={styles.errorNote}>{error} · 마지막으로 불러온 정보를 보여드리고 있어요.</p>}
 
-        <p className={styles.strip}>
-          기계 {MACHINES.length}대 · 가동 중 {running.length} · 대기 {idle.length}
-        </p>
+            <TodoCard abandoned={abandoned} attention={attention} handled={handled} />
 
-        <section>
-          <div className={styles.sectionHead}>
-            <h2>기계 현황</h2>
-            <span>전력·도어 센서로 자동 감지 · 5초마다 갱신 · 급한 순</span>
-          </div>
-          <div className={styles.machines}>
-            {machines.map((machine) => (
-              <MachineCard key={machine.id} machine={machine} />
-            ))}
-          </div>
-        </section>
+            <p className={styles.strip}>
+              기계 {rawMachines.length}대 · 가동 중 {running.length} · 대기 {idle.length}
+            </p>
 
-        {/* 집사가 이미 해결한 일이다. 매번 읽을 이유가 없으니 접어둔다.
-            다만 "집사가 일하고 있다"는 증거라 없애지는 않는다 */}
-        <details className={styles.log}>
-          <summary className={styles.logSummary}>
-            최근 처리 내역
-            <span className={styles.logNote}>집사가 {handled}건을 자동으로 해결했어요</span>
-          </summary>
-          <Feed />
-        </details>
+            <section>
+              <div className={styles.sectionHead}>
+                <h2>기계 현황</h2>
+                <span>전력·도어 센서로 자동 감지 · 5초마다 갱신 · 급한 순</span>
+              </div>
+              <div className={styles.machines}>
+                {machines.map((machine) => (
+                  <MachineCard key={machine.id} machine={machine} />
+                ))}
+              </div>
+            </section>
+
+            {/* 집사가 이미 해결한 일이다. 매번 읽을 이유가 없으니 접어둔다.
+                다만 "집사가 일하고 있다"는 증거라 없애지는 않는다 */}
+            <details className={styles.log}>
+              <summary className={styles.logSummary}>
+                최근 처리 내역
+                <span className={styles.logNote}>집사가 {handled}건을 자동으로 해결했어요</span>
+              </summary>
+              {notifLoading ? (
+                <p className={styles.logState}>불러오는 중이에요…</p>
+              ) : notifError && rawNotifications.length === 0 ? (
+                <div className={styles.logErrorWrap}>
+                  <section className={styles.errorCard}>
+                    <p className={styles.errorText}>{notifError}</p>
+                    <button
+                      type="button"
+                      className={styles.refreshButton}
+                      onClick={loadNotifications}
+                    >
+                      다시 시도
+                    </button>
+                  </section>
+                </div>
+              ) : rawNotifications.length === 0 ? (
+                <p className={styles.logState}>아직 처리한 내역이 없어요.</p>
+              ) : (
+                <>
+                  {notifError && <p className={styles.logState}>{notifError} · 마지막으로 불러온 내역을 보여드리고 있어요.</p>}
+                  <Feed notifications={rawNotifications} />
+                </>
+              )}
+            </details>
+          </>
+        )}
       </main>
     </div>
   );
@@ -229,10 +313,10 @@ function TodoCard({ abandoned, attention, handled }) {
   );
 }
 
-function Feed() {
+function Feed({ notifications }) {
   return (
     <ul className={styles.feed}>
-      {RECENT_NOTIFICATIONS.map((notification) => {
+      {notifications.map((notification) => {
         const { tag, tone, text } = describe(notification);
         return (
           <li key={notification.id} className={styles.feedItem}>

@@ -10,3 +10,7 @@ export const COLLECT_REMINDER_INTERVAL_MIN = 30; // 1차 이후 2차 알림 간�
 
 // eta 계산 (T-13 조회 API에서 사용)
 export const STANDARD_COURSE_MIN = 35;
+export const ETA_RANGE_MIN = 5; // etaFrom/etaTo 반폭 — 2026-07-21 결정, 표준 코스(35분) 중심 ±5분
+
+// 대시보드 최근 처리 내역 (T-13 조회 API에서 사용)
+export const RECENT_NOTIFICATIONS_LIMIT = 20; // sentAt 내림차순 상위 N개
