@@ -290,11 +290,11 @@ function Finished({ name, session, waiting, subscribed }) {
           <span className={styles.waitChip}>{formatElapsed(session.endedAt)}째 기다리는 중</span>
         </div>
 
-        <button type="button" className={styles.button}>
-          수거했어요
+        <button type="button" className={styles.buttonDisabled} disabled>
+          수거했어요 (준비 중)
         </button>
         <p className={styles.fineprint}>
-          문이 열리면 자동으로 확인되니, 버튼은 안 눌러도 괜찮아요.
+          버튼으로 직접 알리는 기능은 아직 준비 중이에요. 다음 손님이 세탁을 시작하면 자동으로 정리돼요.
         </p>
       </div>
 
@@ -337,11 +337,11 @@ function NextCustomerGuide({ machine }) {
           </li>
           <li>
             <span className={styles.stepNo}>3</span>
-            원래 주인에게는 보관 위치가 자동으로 안내돼요
+            원래 주인에게 보관 위치를 안내하는 기능은 준비 중이에요
           </li>
         </ol>
-        <button type="button" className={styles.button}>
-          선반으로 옮기고 사용할게요
+        <button type="button" className={styles.buttonDisabled} disabled>
+          선반으로 옮기고 사용할게요 (준비 중)
         </button>
       </section>
     </>
