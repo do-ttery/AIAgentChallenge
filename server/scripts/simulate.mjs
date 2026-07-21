@@ -17,9 +17,12 @@
  *   SPIN → DONE      20W 이하가 60초 유지
  *
  * 표준 코스는 실제로 35분 걸리지만, 시뮬레이터는 그만큼 기다리지 않는다.
- * 각 구간을 압축된 시간으로 빠르게 흘려보내되, 전력값은 임계값을 실제로
- * 넘고("500W 이상 스파이크") 그 조건이 요구하는 "지속/유지"는 실제 신호
- * 개수·간격으로 재현한다 (예: 20W 이하를 5초 간격 신호 여러 개로 60초 유지).
+ * IDLE→RUNNING·RUNNING→SPIN은 hold 조건이 없는 즉시 전이라(CLAUDE.md
+ * 2026-07-20 결정) 압축된 시간으로 빠르게 흘려보낸다.
+ *
+ * 단 SPIN→DONE은 상태머신이 실제 벽시계 시간(Date.now())으로 60초 유지를
+ * 재므로 압축할 수 없다 — 이 구간(donePhase)만 실제 5초 간격으로 약
+ * 65초를 기다린 뒤 DONE 전이를 확인한다.
  *
  * ────────────────────────────────────────────────────────────────
  * 사용법
@@ -30,13 +33,24 @@
  * ────────────────────────────────────────────────────────────────
  */
 
+import { DONE_HOLD_SEC } from "../services/constants.js";
+
 const DEFAULT_MACHINE_ID = "m1";
 const DEFAULT_SERVER = "http://localhost:3000";
 
 // 폴링 간격을 그대로 쓰면 35분짜리 코스를 기다려야 하니, 신호 사이 실제
 // 대기 시간만 압축한다(배속). 신호 "개수"는 임계값의 지속·유지 조건을
 // 만족하도록 그대로 둔다 — 즉 값·개수는 실측/스펙 그대로, 시간만 빠르게.
-const SIM_INTERVAL_MS = 300; // 운영 5초 폴링 1회 = 시뮬레이터 300ms
+//
+// 단, SPIN → DONE 만은 이 배속이 통하지 않는다. 상태머신(stateMachine.js
+// trackDoneHold)이 실제 벽시계 Date.now()로 DONE_HOLD_SEC(60초) 경과를 재기
+// 때문에, 신호를 아무리 많이 보내도 실제 시간이 흐르지 않으면 DONE에 영영
+// 도달하지 못한다. 이 구간의 "유지 시간"을 지어내서 압축하면 검증 자체가
+// 거짓이 되므로(실측 없이 숫자를 만들지 않는다는 프로젝트 원칙과도 배치),
+// donePhase()만 예외적으로 실제 시간을 기다린다.
+const SIM_INTERVAL_MS = 300; // 운영 5초 폴링 1회 = 시뮬레이터 300ms (hold 없는 전이용)
+const DONE_REAL_INTERVAL_MS = 5000; // SPIN → DONE 구간은 운영과 동일한 5초 간격을 실제로 기다림
+const DONE_TICKS = Math.ceil(DONE_HOLD_SEC / (DONE_REAL_INTERVAL_MS / 1000)) + 1; // 60초 → 13틱
 
 const SCENARIOS = ["normal", "abandoned", "no-qr", "sensor-error"];
 
@@ -98,10 +112,10 @@ function log(scenario, message) {
   console.log(`[${scenario}] ${message}`);
 }
 
-async function sendWatt(server, machineId, scenario, watt, note) {
+async function sendWatt(server, machineId, scenario, watt, note, intervalMs = SIM_INTERVAL_MS) {
   await ingest(server, machineId, { type: "watt", value: watt });
   log(scenario, `watt ${watt}W${note ? ` (${note})` : ""}`);
-  await sleep(SIM_INTERVAL_MS);
+  await sleep(intervalMs);
 }
 
 async function sendDoor(server, machineId, scenario, type, note) {
@@ -134,13 +148,18 @@ async function spinPhase(server, machineId, scenario) {
   await sendWatt(server, machineId, scenario, watt);
 }
 
-// SPIN → DONE: 20W 이하가 60초 유지. 운영 5초 폴링 기준 60초 = 12틱 필요.
+// SPIN → DONE: 20W 이하가 DONE_HOLD_SEC(60초) 유지. 상태머신이 실제 시간을 재므로
+// 이 구간은 압축하지 않고 운영과 동일한 5초 간격으로 실제로 기다린다.
 async function donePhase(server, machineId, scenario) {
-  const TICKS_FOR_60S = 12; // 5초 간격 폴링 12회 = 60초
-  log(scenario, `SPIN → DONE (20W 이하 ${TICKS_FOR_60S}회 연속 = 60초 유지 재현)`);
-  for (let i = 0; i < TICKS_FOR_60S; i += 1) {
+  const totalSec = Math.round((DONE_TICKS * DONE_REAL_INTERVAL_MS) / 1000);
+  log(
+    scenario,
+    `SPIN → DONE (20W 이하 ${DONE_HOLD_SEC}초 유지 판정 — 상태머신이 실제 시간을 측정하므로 ` +
+      `이 구간은 압축 없이 실제로 기다립니다, 약 ${totalSec}초 소요)`,
+  );
+  for (let i = 0; i < DONE_TICKS; i += 1) {
     const watt = 5 + Math.round(Math.random() * 10); // 5~15W, 실측 종료 안착값 7~9W대
-    await sendWatt(server, machineId, scenario, watt);
+    await sendWatt(server, machineId, scenario, watt, `${i + 1}/${DONE_TICKS}`, DONE_REAL_INTERVAL_MS);
   }
   log(scenario, "SPIN → DONE (20W 이하 유지 확인)");
 }
