@@ -82,6 +82,16 @@
   line-height: 1.5;
 }
 
+/* ── 폴링 실패 안내 — 이미 데이터가 있는데 갱신만 실패했을 때. 빨강 금지라 경고색 대신
+   본문보다 옅은 회색으로 조용히 알린다 (관리자 화면의 errorNote와 달리 고객 화면은 danger색을 안 쓴다) */
+.staleNote {
+  margin: 0;
+  padding: 0 var(--space-1);
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
 /* ── 카드 ── */
 .card {
   padding: var(--space-3);
