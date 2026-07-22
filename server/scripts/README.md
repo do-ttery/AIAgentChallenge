@@ -85,3 +85,58 @@ python power_poll.py --host 192.168.0.xx --interval 5 --machine-id m1 --server h
 ## 커밋 주의
 
 `.csv` 실측 파일과 자격증명은 커밋하지 않는다. (`server/data/`·`.env` 규칙과 동일)
+
+---
+
+# 도어 이벤트 폴링 · 실측 (T-06 ~ T-07)
+
+T110(문열림 센서) 상태를 H100(허브) 경유로 읽어 **문 열림/닫힘 엣지**를 감지하고
+`POST /ingest`(`door_open`/`door_close`)로 보낸다. 전력 폴링과 같은 원칙 — 개발·운영 경로 동일.
+
+## T-06: Tapo 앱 등록 · 부착 (물리 작업 — 코드 아님)
+
+1. Tapo 앱에서 **H100(허브)** 를 매장 Wi-Fi 에 페어링
+2. 같은 앱에서 **T110** 을 H100 의 자식 기기로 페어링하고, 알아보기 쉬운 **별명**을 붙인다
+   (예: `세탁기1 문열림`, `세탁기2 문열림` …)
+3. T110 의 자석 두 짝을 세탁기 문에 부착 — **문이 열리면 두 짝이 벌어지도록** (문틀 쪽 1개 + 문짝 쪽 1개)
+4. 허브(H100) 의 IP 확인 — 플러그와 동일하게 `kasa discover` 또는 Tapo 앱의 기기 설정에서 확인
+5. `machine.door_sensor_id` 컬럼(현재 NULL, `schema.sql` 참고)에 별명 또는 기기 ID 를 채운다 — 서버가 어떤 기계가 어떤 센서인지 매핑하는 값
+
+## T-07: 폴링 스크립트
+
+```bash
+cd server/scripts
+python door_poll.py --host 192.168.0.yy --nickname "세탁기1 문열림" --no-post
+```
+
+- `--host` 는 **H100 허브의 IP** (P110M 플러그와는 다른 IP)
+- `--nickname` 은 Tapo 앱에서 붙인 T110 별명 그대로. 별명 대신 `--device-id` 로도 지정 가능
+- 최초 1회 읽은 상태는 "초기 상태"로만 기록하고 이벤트를 쏘지 않는다 (엣지 감지라 기준점이 필요)
+- 상태가 바뀔 때만 `door_open`/`door_close` 를 `/ingest` 로 전송, CSV 에는 매 폴링을 다 남긴다
+
+### 탈수 진동 오탐 확인 (T-07 핵심)
+
+CLAUDE.md 규칙상 `RUNNING`/`SPIN` 중 `door_open` 은 상태 머신이 무시하도록 이미 되어 있지만(오탐 방어),
+그 방어가 실제로 필요한지는 **T110 이 탈수 진동으로 open 을 오인식하는지 먼저 확인**해야 안다.
+
+```bash
+# 세탁 1회 내내 --no-post 로 CSV 만 남기고, 탈수 스파이크 구간에 open 이 찍히는지 확인
+python door_poll.py --host 192.168.0.yy --nickname "세탁기1 문열림" --interval 5 --no-post
+```
+
+power_poll.py 로 같은 세탁 사이클의 전력 곡선도 같이 찍어두면, 탈수 스파이크 시각과
+door CSV 의 `open=True` 시각을 겹쳐봐서 오탐 여부·빈도를 판단할 수 있다.
+
+## 옵션
+
+| 옵션 | 기본 | 뜻 |
+|---|---|---|
+| `--host` | 파일 상단 `HOST` | 허브(H100) IP |
+| `--nickname` | 파일 상단 `NICKNAME` | Tapo 앱에서 페어링한 T110 별명 |
+| `--device-id` | — | 별명 대신 기기 ID 로 지정 |
+| `--interval` | 5.0 | 폴링 간격 초 |
+| `--machine-id` | m1 | 기계 ID |
+| `--server` | http://localhost:3000 | `/ingest` 대상 |
+| `--no-post` | off | CSV 만, 서버 전송 안 함 |
+| `--csv` | `door_<타임스탬프>.csv` | 출력 경로 |
+| `--username` / `--password` | env `TAPO_USERNAME` / `TAPO_PASSWORD` | TAPO 자격증명 (P110M 과 동일 계정) |
