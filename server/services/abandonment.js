@@ -122,7 +122,7 @@ async function getMachineName(db, machineId) {
 // === false), 세션 구독 대신 session_id IS NULL인 사장님(매장) 구독으로 발송한다(2026-07-21 결정).
 // 발송 실패는 sendPush 내부에서 로그만 남기고 여기로 예외를 던지지 않는다 — 상태 머신 흐름을
 // 막지 않기 위함(CLAUDE.md 지시).
-async function recordNotification(db, sessionId, type, machineId) {
+export async function recordNotification(db, sessionId, type, machineId) {
   if (await notificationAlreadySent(db, sessionId, type)) {
     log(sessionId, `${type} 알림 중복 방지(이미 발송됨) — 건너뜀`);
     return false;
@@ -138,7 +138,7 @@ async function recordNotification(db, sessionId, type, machineId) {
   }
 
   const machineName = machineId ? await getMachineName(db, machineId) : undefined;
-  const payload = buildNotificationPayload(type, { machineName });
+  const payload = buildNotificationPayload(type, { machineName, machineId });
 
   for (const sub of subscriptions) {
     const ok = await sendPush(sub, payload);

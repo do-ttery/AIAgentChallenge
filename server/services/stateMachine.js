@@ -1,6 +1,6 @@
 import { getDb } from "./db.js";
 import { START_W, SPIN_W, DONE_W, DONE_HOLD_SEC } from "./constants.js";
-import { scheduleAbandonCheck, cancelAbandonTimers } from "./abandonment.js";
+import { scheduleAbandonCheck, cancelAbandonTimers, recordNotification } from "./abandonment.js";
 
 // 상태 머신 (T-10)
 // POST /ingest/:machineId 로 들어온 이벤트 하나를 6상태 전이 규칙에 따라 처리한다.
@@ -97,6 +97,13 @@ async function handleWatt(db, machine, session, machineId, value, now) {
     await updateSessionState(db, session.id, "SPIN");
     await setMachineStatus(db, machineId, "SPIN");
     log(machineId, "RUNNING", "SPIN", `${value}W ≥ ${SPIN_W}W`);
+    // 2026-07-22: DEPARTURE("곧 끝나요") 트리거 연결. 정확한 종료 시각은 몰라도
+    // 마지막 탈수 시작이 코스 막바지라, 이 시점을 "슬슬 출발하세요" 신호로 쓴다
+    // (LandingPage 구독 완료 문구가 이미 이렇게 약속하고 있었음 — 그동안 실제로는
+    // 안 보내던 부분).
+    recordNotification(db, session.id, "DEPARTURE", machineId).catch((err) => {
+      console.error(`[stateMachine] session ${session.id} DEPARTURE 알림 실패:`, err.message);
+    });
     return { transitioned: true };
   }
 
@@ -110,6 +117,12 @@ async function handleWatt(db, machine, session, machineId, value, now) {
       log(machineId, "SPIN", "DONE", `${DONE_W}W 이하가 ${DONE_HOLD_SEC}초 유지`);
       // DONE → ABANDONED는 시간 기반 전이라(T-11) 방치 타이머를 여기서 건다.
       scheduleAbandonCheck(machineId, session.id, now);
+      // 2026-07-22: COMPLETED 알림 트리거 연결(T-12 작업 요약에 "트리거 미연결"로
+      // 남아있던 부분). 구독자가 없으면 recordNotification 내부에서 기록만 하고
+      // 조용히 끝난다 — 방치 알림(OWNER_ALERT)과 달리 구독 없다고 사장님에게 갈 필요는 없다.
+      recordNotification(db, session.id, "COMPLETED", machineId).catch((err) => {
+        console.error(`[stateMachine] session ${session.id} COMPLETED 알림 실패:`, err.message);
+      });
       return { transitioned: true };
     }
     return { transitioned: false };
