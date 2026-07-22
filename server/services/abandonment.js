@@ -150,7 +150,7 @@ export async function recordNotification(db, sessionId, type, machineId) {
 
 // 30분 타이머 만료 시 실행. 그 사이 이미 수거(COLLECTED)됐으면 취소된 타이머라
 // 여기까지 오지 않는 게 정상이지만, 방어적으로 한 번 더 현재 상태를 확인한다.
-async function handleAbandonTimeout(machineId, sessionId) {
+export async function handleAbandonTimeout(machineId, sessionId) {
   const db = getDb();
   const session = await getSessionState(db, sessionId);
 
