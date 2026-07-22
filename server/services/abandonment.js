@@ -1,5 +1,10 @@
 import { getDb } from "./db.js";
-import { ABANDONED_AFTER_MIN, COLLECT_REMINDER_INTERVAL_MIN } from "./constants.js";
+import {
+  ABANDONED_AFTER_MIN,
+  COLLECT_REMINDER_INTERVAL_MIN,
+  STANDARD_COURSE_MIN,
+  ETA_RANGE_MIN,
+} from "./constants.js";
 import { sendPush } from "./push.js";
 import { buildNotificationPayload } from "./notificationMessages.js";
 
@@ -13,6 +18,7 @@ const MIN_MS = 60 * 1000;
 
 const abandonTimers = new Map(); // sessionId -> Timeout (DONE → ABANDONED 판정)
 const reminderTimers = new Map(); // sessionId -> Timeout (1차 → 2차 수거 알림)
+const departureTimers = new Map(); // sessionId -> Timeout (DEPARTURE 알림)
 
 function log(sessionId, message) {
   console.log(`[abandonment] session ${sessionId} ${message}`);
@@ -62,6 +68,50 @@ function clearReminderTimer(sessionId) {
   clearTimeout(timer);
   reminderTimers.delete(sessionId);
   return true;
+}
+
+// IDLE → RUNNING 진입 시 호출한다 (stateMachine.js). 실측(첫 탈수 = 코스 초반)으로
+// "탈수 전이 시점 = 곧 끝남"이 아님이 드러나(2026-07-22), 상태 기반 대신 T-13과 같은
+// eta 계산(STANDARD_COURSE_MIN - ETA_RANGE_MIN)을 그대로 재사용해 시간 기반으로 건다.
+// startedAt은 세션 시작 시각(epoch ms).
+export function scheduleDepartureAlert(machineId, sessionId, startedAt = Date.now()) {
+  clearDepartureTimer(sessionId);
+
+  const fireAt = startedAt + (STANDARD_COURSE_MIN - ETA_RANGE_MIN) * MIN_MS;
+  const delay = Math.max(fireAt - Date.now(), 0);
+
+  const timer = setTimeout(() => {
+    departureTimers.delete(sessionId);
+    handleDepartureAlert(machineId, sessionId).catch((err) => {
+      console.error(`[abandonment] session ${sessionId} DEPARTURE 처리 실패:`, err.message);
+    });
+  }, delay);
+
+  departureTimers.set(sessionId, timer);
+  log(sessionId, `DEPARTURE 타이머 시작 (지연 ${Math.round(delay / 1000)}s)`);
+}
+
+function clearDepartureTimer(sessionId) {
+  const timer = departureTimers.get(sessionId);
+  if (!timer) return false;
+  clearTimeout(timer);
+  departureTimers.delete(sessionId);
+  return true;
+}
+
+// 타이머 만료 시 실행. 그 사이 이미 DONE(코스가 예상보다 빨리 끝남)으로 넘어갔으면
+// "곧 끝나요"가 더는 사실이 아니므로 보내지 않는다 — RUNNING/SPIN일 때만 유효하다.
+async function handleDepartureAlert(machineId, sessionId) {
+  const db = getDb();
+  const session = await getSessionState(db, sessionId);
+
+  if (!session || (session.state !== "RUNNING" && session.state !== "SPIN")) {
+    log(sessionId, `DEPARTURE 취소(현재 state=${session?.state ?? "없음"}, 이미 종료됨)`);
+    return;
+  }
+
+  await recordNotification(db, sessionId, "DEPARTURE", machineId);
+  log(sessionId, "DEPARTURE 알림 처리 완료");
 }
 
 async function getSessionState(db, sessionId) {
@@ -122,7 +172,7 @@ async function getMachineName(db, machineId) {
 // === false), 세션 구독 대신 session_id IS NULL인 사장님(매장) 구독으로 발송한다(2026-07-21 결정).
 // 발송 실패는 sendPush 내부에서 로그만 남기고 여기로 예외를 던지지 않는다 — 상태 머신 흐름을
 // 막지 않기 위함(CLAUDE.md 지시).
-async function recordNotification(db, sessionId, type, machineId) {
+export async function recordNotification(db, sessionId, type, machineId) {
   if (await notificationAlreadySent(db, sessionId, type)) {
     log(sessionId, `${type} 알림 중복 방지(이미 발송됨) — 건너뜀`);
     return false;
@@ -138,7 +188,7 @@ async function recordNotification(db, sessionId, type, machineId) {
   }
 
   const machineName = machineId ? await getMachineName(db, machineId) : undefined;
-  const payload = buildNotificationPayload(type, { machineName });
+  const payload = buildNotificationPayload(type, { machineName, machineId });
 
   for (const sub of subscriptions) {
     const ok = await sendPush(sub, payload);
@@ -150,7 +200,7 @@ async function recordNotification(db, sessionId, type, machineId) {
 
 // 30분 타이머 만료 시 실행. 그 사이 이미 수거(COLLECTED)됐으면 취소된 타이머라
 // 여기까지 오지 않는 게 정상이지만, 방어적으로 한 번 더 현재 상태를 확인한다.
-async function handleAbandonTimeout(machineId, sessionId) {
+export async function handleAbandonTimeout(machineId, sessionId) {
   const db = getDb();
   const session = await getSessionState(db, sessionId);
 

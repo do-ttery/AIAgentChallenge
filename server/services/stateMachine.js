@@ -1,6 +1,11 @@
 import { getDb } from "./db.js";
 import { START_W, SPIN_W, DONE_W, DONE_HOLD_SEC } from "./constants.js";
-import { scheduleAbandonCheck, cancelAbandonTimers } from "./abandonment.js";
+import {
+  scheduleAbandonCheck,
+  cancelAbandonTimers,
+  recordNotification,
+  scheduleDepartureAlert,
+} from "./abandonment.js";
 
 // 상태 머신 (T-10)
 // POST /ingest/:machineId 로 들어온 이벤트 하나를 6상태 전이 규칙에 따라 처리한다.
@@ -90,6 +95,11 @@ async function handleWatt(db, machine, session, machineId, value, now) {
     const newSession = await createSession(db, machineId, "RUNNING", startedAt);
     await setMachineStatus(db, machineId, "RUNNING");
     log(machineId, "IDLE", "RUNNING", `${value}W ≥ ${START_W}W`);
+    // 2026-07-22: DEPARTURE("곧 끝나요")를 SPIN 진입 시점에 보내봤더니 표준 코스는
+    // 탈수 스파이크가 4번(헹굼 3회 + 최종탈수)이라 첫 탈수는 코스 초반이었다(실기기
+    // 확인). "몇 번째 탈수인지"는 상태머신이 구분할 방법이 없어(SPIN→RUNNING 역전이
+    // 없음), 대신 T-13 조회 API와 같은 eta 계산을 그대로 재사용해 시간 기반으로 건다.
+    scheduleDepartureAlert(machineId, newSession.id, now);
     return { transitioned: true, sessionId: newSession.id };
   }
 
@@ -110,6 +120,12 @@ async function handleWatt(db, machine, session, machineId, value, now) {
       log(machineId, "SPIN", "DONE", `${DONE_W}W 이하가 ${DONE_HOLD_SEC}초 유지`);
       // DONE → ABANDONED는 시간 기반 전이라(T-11) 방치 타이머를 여기서 건다.
       scheduleAbandonCheck(machineId, session.id, now);
+      // 2026-07-22: COMPLETED 알림 트리거 연결(T-12 작업 요약에 "트리거 미연결"로
+      // 남아있던 부분). 구독자가 없으면 recordNotification 내부에서 기록만 하고
+      // 조용히 끝난다 — 방치 알림(OWNER_ALERT)과 달리 구독 없다고 사장님에게 갈 필요는 없다.
+      recordNotification(db, session.id, "COMPLETED", machineId).catch((err) => {
+        console.error(`[stateMachine] session ${session.id} COMPLETED 알림 실패:`, err.message);
+      });
       return { transitioned: true };
     }
     return { transitioned: false };
@@ -125,6 +141,7 @@ async function handleWatt(db, machine, session, machineId, value, now) {
     const newSession = await createSession(db, machineId, "RUNNING", startedAt);
     await setMachineStatus(db, machineId, "RUNNING");
     log(machineId, "IDLE", "RUNNING", `${value}W ≥ ${START_W}W (다음 세탁)`);
+    scheduleDepartureAlert(machineId, newSession.id, now);
     return { transitioned: true, sessionId: newSession.id };
   }
 
