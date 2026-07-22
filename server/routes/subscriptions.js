@@ -13,12 +13,16 @@ import { getDb } from "../services/db.js";
 //     자연스럽고 session 리소스 자체를 이번 범위에서 다루지 않아 단순한 평면 경로를 골랐다.
 //
 // body: { sessionId, endpoint, keys: { p256dh, auth } }  (PushSubscription.toJSON() 그대로)
-// 같은 session_id로 이미 구독이 있으면 새로 넣지 않고 기존 것을 그대로 반환한다(중복 방지).
+// 같은 (session_id, endpoint) 조합으로 이미 구독이 있으면 새로 넣지 않고 기존 것을 반환한다
+// (같은 기기가 버튼을 두 번 눌러도 중복 저장 안 되게).
+//
+// 2026-07-22 수정: 예전엔 session_id만 보고 중복을 판단해서, 같은 세션을 다른 기기(예: 맥
+// 브라우저로 먼저 열어봤다가 나중에 실제 손님 폰으로 구독)에서 구독하면 두 번째 기기의
+// 구독이 조용히 무시되고 첫 번째 기기로만 알림이 갔다 — 실기기 테스트로 발견한 버그.
+// endpoint까지 같이 봐야 "같은 기기의 중복 신청"과 "다른 기기의 새 신청"이 구분된다.
 //
 // sessionId가 없으면 "사장님(매장) 구독"으로 처리한다 (2026-07-21 결정).
 // subscription.session_id는 nullable이고, NULL row가 세션에 묶이지 않은 사장님 채널이다.
-// 이 경우 중복 방지는 session_id 대신 endpoint로 판단한다(같은 endpoint가 이미
-// session_id IS NULL로 저장돼 있으면 새로 넣지 않고 기존 것을 반환).
 
 const router = Router();
 
@@ -35,8 +39,8 @@ router.post("/", async (req, res) => {
   try {
     const db = getDb();
 
-    let findQuery = db.from("subscription").select("id, endpoint, created_at");
-    findQuery = sessionId ? findQuery.eq("session_id", sessionId) : findQuery.is("session_id", null).eq("endpoint", endpoint);
+    let findQuery = db.from("subscription").select("id, endpoint, created_at").eq("endpoint", endpoint);
+    findQuery = sessionId ? findQuery.eq("session_id", sessionId) : findQuery.is("session_id", null);
     const { data: existing, error: findErr } = await findQuery.limit(1).maybeSingle();
     if (findErr) throw new Error(findErr.message);
 
