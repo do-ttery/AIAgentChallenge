@@ -246,6 +246,22 @@ export default function OwnerDashboard() {
                 </>
               )}
             </details>
+
+            {/* T-20 — 승인 대기함. UI 자리만 둔다(CLAUDE.md MVP Scope) — 발주·환불처럼
+                되돌리기 어렵거나 돈이 나가는 3단계 행동(docs/plan.md)이 나중에 여기 쌓인다.
+                지금 MVP는 3단계 행동을 하나도 만들지 않으므로 이 화면은 항상 빈 상태다. */}
+            <details className={styles.log}>
+              <summary className={styles.logSummary}>
+                승인 대기함
+                <span className={styles.logNote}>사장님 승인이 필요한 일을 모아둘 자리예요</span>
+              </summary>
+              <div className={styles.approvalBody}>
+                <p className={styles.logState}>아직 승인이 필요한 일이 없어요.</p>
+                <button type="button" className={styles.approvalButton} disabled>
+                  승인하기 (준비 중)
+                </button>
+              </div>
+            </details>
           </>
         )}
       </main>
