@@ -80,6 +80,59 @@ stateDiagram-v2
 
 센서·전력 이상 같은 예외 상황은 상태값이 아니라 대시보드의 **예외 상황** 영역에 표시합니다.
 
+## 데이터 흐름 (아키텍처)
+
+센서 데이터가 들어오는 경로(왼쪽)와 화면이 데이터를 읽어가는 경로(오른쪽)가 분리돼 있고, 둘 다 Supabase를 거칩니다. 알림은 상태 전이가 만든 결과물이지 화면이 직접 요청하는 게 아닙니다.
+
+```mermaid
+flowchart LR
+    classDef box fill:#EDEDED,stroke:#333,stroke-width:1px,color:#111;
+    classDef table fill:#EDEDED,stroke:#333,stroke-width:1px,color:#111;
+
+    Sensor["Tapo 플러그<br/>(전력 감지)"]:::box
+
+    subgraph ClientLane["React (화면)"]
+        direction TB
+        Landing["LandingPage<br/>QR 랜딩"]:::box
+        Dashboard["OwnerDashboard"]:::box
+    end
+
+    subgraph ServerLane["Express (서버)"]
+        direction TB
+        Ingest["POST /ingest<br/>상태 판단 · 방치 감지"]:::box
+        Api["조회 · 구독 API<br/>(GET/POST)"]:::box
+    end
+
+    subgraph DBLane["Supabase (DB)"]
+        direction TB
+        TMachine[("machine")]:::table
+        TSession[("session")]:::table
+        TSub[("subscription")]:::table
+        TReading[("reading")]:::table
+        TNotif[("notification")]:::table
+    end
+
+    Phone["손님 폰<br/>(Push 알림)"]:::box
+
+    Sensor -->|전력값| Ingest
+    Ingest -->|저장| TMachine
+    Ingest -->|저장| TSession
+    Ingest -->|저장| TReading
+    Ingest -->|알림 기록| TNotif
+    Ingest -->|발송| Phone
+
+    Landing -->|fetch 조회 · 구독| Api
+    Dashboard -->|fetch 조회| Api
+    Api -->|select| TMachine
+    Api -->|select| TSession
+    Api -->|select/insert| TSub
+    Api -->|select| TNotif
+```
+
+- **센서 → 서버**: `POST /ingest`가 전력값을 받아 상태를 판단하고, 그 결과로 DB 저장·알림 발송까지 한 번에 처리한다.
+- **화면 → 서버 → DB**: 고객·사장님 화면은 조회·구독 API로만 DB에 접근한다 — 화면이 DB를 직접 보지 않는다.
+- **알림은 화면이 요청하지 않는다**: 서버가 상태 전이를 판단한 시점에 스스로 손님 폰으로 보낸다.
+
 ## 화면
 
 | 화면 | 주요 기능 | 사용자 |
@@ -95,10 +148,10 @@ stateDiagram-v2
 |------|-----------|
 | Frontend | React (Vite), `react-router-dom` |
 | Backend | Express (Node.js) |
-| Database | SQLite (`better-sqlite3`) |
+| Database | Supabase (PostgreSQL), `@supabase/supabase-js` |
 | AI Logic | 전력 패턴 분석, 상태 머신(State Machine) |
-| Hardware | 스마트플러그(Tapo P110M), Zigbee 문열림 센서 |
-| Notification | Web Push API + Service Worker (VAPID) |
+| Hardware | 스마트플러그(Tapo P110M), Tapo T110(문열림)·H100(허브) |
+| Notification | Web Push API + Service Worker (VAPID), `web-push` |
 | 스타일 | 순수 CSS + CSS 변수 + CSS Modules (유틸 프레임워크 미사용) |
 | 모노레포 | npm workspaces + `concurrently` |
 
@@ -108,9 +161,11 @@ stateDiagram-v2
 |---|---|
 | `react-router-dom` | 고객(`/m/:machineId`)·사장님(`/owner`) 화면 분리에 필요 |
 | `concurrently` | `npm run dev` 한 번으로 client·server를 함께 띄우기 위해 (터미널 2개 방지) |
-| `cors` | 개발 중 client(5173) → server(3000) 교차 출처 요청 허용 |
+| `cors` | client(5173) → server(3000) 교차 출처 요청 허용 |
+| `@supabase/supabase-js` | Supabase(PostgreSQL) 클라이언트. SQLite에서 전환(2026-07-16) — 매장 1곳이지만 여러 위치·기기에서 같은 DB 접근 필요 |
+| `web-push` | 서버에서 VAPID 기반 Web Push 발송 |
 
-`better-sqlite3`는 DB 작업(T-09) 시점에 추가합니다. 그 외 라이브러리를 추가할 때는 사유와 함께 이 표와 [CLAUDE.md](CLAUDE.md)에 기록한 뒤 도입합니다.
+라이브러리를 추가할 때는 사유와 함께 이 표와 [CLAUDE.md](CLAUDE.md)에 기록한 뒤 도입합니다.
 
 ## 실행 방법
 
@@ -131,6 +186,7 @@ npm run build   # 프로덕션 빌드
 
 ```text
 /client                    # React (Vite) — 포트 5173
+  /public                  # manifest.webmanifest · push-worker.js(Service Worker)
   /src
     App.jsx                # 라우팅
     /pages
@@ -141,15 +197,15 @@ npm run build   # 프로덕션 빌드
     /mocks                 # mock 데이터 — 구조는 CLAUDE.md의 Data Model과 동일하게
 /server                    # Express — 포트 3000
   index.js
-  /routes                  # POST /ingest/:machineId 등
-  /services                # 상태 머신 · 방치 대응 · 알림
-  /scripts                 # 센서 폴링 · 시뮬레이터
-  /data                    # app.db (커밋 금지)
+  /routes                  # POST /ingest/:machineId · GET /api/machines 등
+  /services                # 상태 머신 · 방치 대응 · Web Push 발송 · Supabase 클라이언트(db.js)
+  /scripts                 # 센서 폴링(power_poll.py) · 시뮬레이터(simulate.mjs)
+  /db/schema.sql           # Supabase 테이블 정의 (SQL Editor에서 1회 실행)
 /docs                      # plan.md · backlog.md · prototype.html
 CLAUDE.md                  # 구현 규칙 · 상세 설계
 ```
 
-> `/server`의 상태 머신·DB·알림과 하드웨어 연동은 아직 뼈대만 있습니다. 개발 중에는 전력 데이터를 시뮬레이터(`server/scripts/`)가 **운영과 동일한** `POST /ingest/:machineId`로 주입합니다. 진행 상황은 [백로그](docs/backlog.md)를 보세요.
+> 상태 머신·방치 대응·Web Push·조회 API까지 서버 핵심 로직은 구현·검증 완료 상태입니다. 개발 중에는 전력 데이터를 시뮬레이터(`server/scripts/simulate.mjs`)가, 실제 매장에서는 `power_poll.py`가 **운영과 동일한** `POST /ingest/:machineId`로 주입합니다. 진행 상황은 [백로그](docs/backlog.md)를 보세요.
 
 ## 개발 규칙
 
@@ -168,6 +224,6 @@ git commit -m "feat: QR 랜딩 페이지 알림 신청 버튼 구현"
 | 담당 | 영역 |
 |---|---|
 | **서원** (`swlog`) | `client/` 화면 3개 · 디자인 시스템 적용 · 시뮬레이터 |
-| **도경** (`do-ttery`) | `server/` Express · SQLite · 상태 머신 · 알림 · Tapo 센서 |
+| **도경** (`do-ttery`) | `server/` Express · Supabase · 상태 머신 · 알림 · Tapo 센서 |
 
 두 사람이 만나는 지점은 [CLAUDE.md](CLAUDE.md)의 **API Spec과 Data Model 하나뿐**입니다. 이미 확정돼 있으므로 서로를 기다리지 않습니다. 프론트는 그 구조 그대로 mock으로 화면을 완성하고, 나중에 mock만 `fetch`로 갈아끼웁니다.
