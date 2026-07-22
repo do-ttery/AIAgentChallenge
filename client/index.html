@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>빨래집사 — 무인빨래방 AI 점장 에이전트</title>
+
+    <!-- T-18 — iOS는 "홈 화면에 추가" 후 standalone(독립 앱) 모드로 열려야만
+         PushManager를 내준다. 이 태그·매니페스트 없이는 홈 화면에 추가해도
+         그냥 사파리 탭이 열려서 알림 신청이 계속 막힌다. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#6366F1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="빨래집사" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
   </head>
   <body>
     <div id="root"></div>

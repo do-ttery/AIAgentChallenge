@@ -1,0 +1,9 @@
+{
+  "name": "빨래집사",
+  "short_name": "빨래집사",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#6366F1",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
