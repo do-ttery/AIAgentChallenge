@@ -31,6 +31,15 @@ const STEPS = [
 
 const RUNNING_STATES = ["RUNNING", "SPIN"];
 
+/* T-18 — QR 알림 신청. VAPID 공개키(base64url)를 PushManager가 요구하는
+   Uint8Array로 바꾼다 — web-push 생태계의 표준 변환 방식. */
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
+}
+
 function stepIndex(status) {
   if (status === "RUNNING") return 0;
   if (status === "SPIN") return 1;
@@ -47,6 +56,48 @@ export default function LandingPage() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState(null);
   const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeError, setSubscribeError] = useState(null);
+
+  /* T-18 — 권한 요청 → Service Worker 등록 → 구독 → 서버 저장. 브라우저 미지원·권한 거부·
+     저장 실패는 전부 subscribeError로 모아서 화면에 경고 타일로 보여준다(아래 렌더 부분). */
+  async function handleSubscribe(sessionId) {
+    if (subscribing) return;
+    setSubscribing(true);
+    setSubscribeError(null);
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        setSubscribeError("이 브라우저는 알림 신청을 지원하지 않아요.");
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setSubscribeError("알림 권한이 거부됐어요. 브라우저 설정에서 허용 후 다시 시도해 주세요.");
+        return;
+      }
+      await navigator.serviceWorker.register("/push-worker.js");
+      const registration = await navigator.serviceWorker.ready;
+      const pushSubscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC),
+      });
+      const { endpoint, keys } = pushSubscription.toJSON();
+
+      const res = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, endpoint, keys }),
+      });
+      if (!res.ok) throw new Error(`구독 저장 실패 (HTTP ${res.status})`);
+
+      setSubscribed(true);
+    } catch (err) {
+      console.error("[LandingPage] 알림 구독 실패", err);
+      setSubscribeError("알림 신청에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSubscribing(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -174,7 +225,11 @@ export default function LandingPage() {
       {isRunning && (
         <>
           <Progress session={session} status={status} />
-          {subscribed ? (
+          {/* 2026-07-22 수정: subscribed(로컬 state)만 보면 알림 탭·새로고침으로 화면이
+              새로 뜰 때마다 실제로는 구독돼 있어도 "신청 안 함"으로 되돌아갔다(실기기 테스트로
+              발견). 서버가 내려주는 session.subscriberCount를 같이 봐서 진짜 상태를 반영한다.
+              subscribed는 방금 이 화면에서 성공한 직후 폴링 전에도 즉시 반영되게 남겨둔다. */}
+          {subscribed || session.subscriberCount > 0 ? (
             <p className={`${styles.tile} ${styles.tileOn}`}>
               <span className={styles.tileIcon}>🔔</span>
               <span>
@@ -191,15 +246,22 @@ export default function LandingPage() {
               <button
                 type="button"
                 className={styles.button}
-                onClick={() => setSubscribed(true)}
+                disabled={subscribing}
+                onClick={() => handleSubscribe(session.id)}
               >
-                이 세탁기 알림 신청
+                {subscribing ? "신청 중…" : "이 세탁기 알림 신청"}
               </button>
               <p className={styles.fineprint}>
                 신청하지 않아도 이 화면에서 진행 상황은 계속 볼 수 있어요. 다만 완료·수거 알림은
                 보내드릴 수 없어요.
               </p>
             </div>
+          )}
+          {subscribeError && (
+            <p className={`${styles.tile} ${styles.tileWarn}`}>
+              <span className={styles.tileIcon}>🔕</span>
+              <span>{subscribeError}</span>
+            </p>
           )}
           <ButlerTip>
             세탁이 끝나고 오래 찾아가지 않으면, 집사가 대신 챙기고 사장님께 알려요.
