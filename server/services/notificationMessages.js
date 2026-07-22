@@ -3,8 +3,11 @@
 // 여기 문구는 payload.title/body로 그대로 Web Push에 실린다 (client Service Worker가 T-18에서 렌더링).
 //
 // COMPLETED는 2026-07-22 stateMachine.js(SPIN→DONE)에 트리거 연결 완료.
-// DEPARTURE(탈수 감지 시점 "곧 끝나요")는 아직 트리거 미연결 — 문구만 미리 정해 두고,
-// eta(etaFrom/etaTo)가 준비되면 stateMachine.js에서 그대로 재사용한다.
+// DEPARTURE("곧 끝나요")도 연결 완료 — 처음엔 SPIN 진입(탈수 감지) 시점에 걸었으나,
+// 실기기 확인 결과 표준 코스는 탈수 스파이크가 4번(헹굼 3회 + 최종탈수)이라 첫 탈수는
+// 코스 초반이었다. 몇 번째 탈수인지 상태머신이 구분 못 해(SPIN→RUNNING 역전이 없음),
+// abandonment.js의 scheduleDepartureAlert가 eta 계산(STANDARD_COURSE_MIN - ETA_RANGE_MIN)
+// 기반 타이머로 대신 건다.
 //
 // 2026-07-22 추가: payload.url — 알림을 탭했을 때 sw.js가 이동시킬 주소. 이게 없으면
 // 알림 탭 시 항상 사이트 루트("/")로만 가서 손님이 자기 세탁기 화면을 다시 못 찾는

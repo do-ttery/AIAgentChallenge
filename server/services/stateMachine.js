@@ -1,6 +1,11 @@
 import { getDb } from "./db.js";
 import { START_W, SPIN_W, DONE_W, DONE_HOLD_SEC } from "./constants.js";
-import { scheduleAbandonCheck, cancelAbandonTimers, recordNotification } from "./abandonment.js";
+import {
+  scheduleAbandonCheck,
+  cancelAbandonTimers,
+  recordNotification,
+  scheduleDepartureAlert,
+} from "./abandonment.js";
 
 // 상태 머신 (T-10)
 // POST /ingest/:machineId 로 들어온 이벤트 하나를 6상태 전이 규칙에 따라 처리한다.
@@ -90,6 +95,11 @@ async function handleWatt(db, machine, session, machineId, value, now) {
     const newSession = await createSession(db, machineId, "RUNNING", startedAt);
     await setMachineStatus(db, machineId, "RUNNING");
     log(machineId, "IDLE", "RUNNING", `${value}W ≥ ${START_W}W`);
+    // 2026-07-22: DEPARTURE("곧 끝나요")를 SPIN 진입 시점에 보내봤더니 표준 코스는
+    // 탈수 스파이크가 4번(헹굼 3회 + 최종탈수)이라 첫 탈수는 코스 초반이었다(실기기
+    // 확인). "몇 번째 탈수인지"는 상태머신이 구분할 방법이 없어(SPIN→RUNNING 역전이
+    // 없음), 대신 T-13 조회 API와 같은 eta 계산을 그대로 재사용해 시간 기반으로 건다.
+    scheduleDepartureAlert(machineId, newSession.id, now);
     return { transitioned: true, sessionId: newSession.id };
   }
 
@@ -97,13 +107,6 @@ async function handleWatt(db, machine, session, machineId, value, now) {
     await updateSessionState(db, session.id, "SPIN");
     await setMachineStatus(db, machineId, "SPIN");
     log(machineId, "RUNNING", "SPIN", `${value}W ≥ ${SPIN_W}W`);
-    // 2026-07-22: DEPARTURE("곧 끝나요") 트리거 연결. 정확한 종료 시각은 몰라도
-    // 마지막 탈수 시작이 코스 막바지라, 이 시점을 "슬슬 출발하세요" 신호로 쓴다
-    // (LandingPage 구독 완료 문구가 이미 이렇게 약속하고 있었음 — 그동안 실제로는
-    // 안 보내던 부분).
-    recordNotification(db, session.id, "DEPARTURE", machineId).catch((err) => {
-      console.error(`[stateMachine] session ${session.id} DEPARTURE 알림 실패:`, err.message);
-    });
     return { transitioned: true };
   }
 
@@ -138,6 +141,7 @@ async function handleWatt(db, machine, session, machineId, value, now) {
     const newSession = await createSession(db, machineId, "RUNNING", startedAt);
     await setMachineStatus(db, machineId, "RUNNING");
     log(machineId, "IDLE", "RUNNING", `${value}W ≥ ${START_W}W (다음 세탁)`);
+    scheduleDepartureAlert(machineId, newSession.id, now);
     return { transitioned: true, sessionId: newSession.id };
   }
 
