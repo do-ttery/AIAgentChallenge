@@ -4,7 +4,7 @@
   "summary": "무인빨래방의 방치 세탁물을 스스로 감지하고 단계적으로 대응하는 AI 운영 에이전트입니다.",
   "githubUser": "swlog(서원), do-ttery(도경)",
   "demoUrl": "",
-  "thumbnail": "thumbnail.webp",
+  "thumbnail": "thumbnail.png",
   "screenshots": [],
   "problem": "무인빨래방은 운영자가 매장에 상주하지 않아, 세탁이 끝난 뒤에도 고객이 세탁물을 오랫동안 찾아가지 않는 방치 문제가 자주 발생합니다. 방치된 세탁물은 다음 손님이 기계를 쓰지 못하게 하고 매장 회전율을 떨어뜨리며 민원으로 이어집니다.",
   "targetUsers": [
