@@ -12,4 +12,17 @@ export default defineConfig({
       '/ingest': SERVER_ORIGIN,
     },
   },
+  oxc: {
+    jsx: {
+      runtime: 'automatic',
+      importSource: 'react',
+    },
+  },
+  esbuild: {
+    jsx: 'automatic',
+    jsxImportSource: 'react',
+  },
+  test: {
+    environment: 'jsdom',
+  },
 })
