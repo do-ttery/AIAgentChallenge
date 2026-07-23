@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { getDb } from "../services/db.js";
-import { STANDARD_COURSE_MIN, ETA_RANGE_MIN } from "../services/constants.js";
+import { computeEta } from "../services/eta.js";
 
 // 조회 API 중 기계 목록·단건 조회를 구현한다 (T-13).
 //   GET /api/machines → Machine[]
@@ -21,17 +21,6 @@ const router = Router();
 // QR 오타 등 잘못된 id도 손님 입장에선 "기계를 찾을 수 없음"과 같으므로,
 // DB에 물어보기 전에 형식부터 걸러 404로 통일한다.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function computeEta(startedAtIso) {
-  const startedAtMs = new Date(startedAtIso).getTime();
-  const etaFrom = new Date(
-    startedAtMs + (STANDARD_COURSE_MIN - ETA_RANGE_MIN) * 60_000
-  ).toISOString();
-  const etaTo = new Date(
-    startedAtMs + (STANDARD_COURSE_MIN + ETA_RANGE_MIN) * 60_000
-  ).toISOString();
-  return { etaFrom, etaTo };
-}
 
 async function countSubscribers(db, sessionId) {
   const { count, error } = await db
