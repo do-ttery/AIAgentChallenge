@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "title": "빨래집사",
+  "summary": "무인빨래방의 방치 세탁물을 스스로 감지하고 단계적으로 대응하는 AI 운영 에이전트입니다.",
+  "githubUser": "swlog(서원), do-ttery(도경)",
+  "demoUrl": "",
+  "thumbnail": "thumbnail.webp",
+  "screenshots": [],
+  "problem": "무인빨래방은 운영자가 매장에 상주하지 않아, 세탁이 끝난 뒤에도 고객이 세탁물을 오랫동안 찾아가지 않는 방치 문제가 자주 발생합니다. 방치된 세탁물은 다음 손님이 기계를 쓰지 못하게 하고 매장 회전율을 떨어뜨리며 민원으로 이어집니다.",
+  "targetUsers": [
+    "무인빨래방을 운영하는 사장님",
+    "세탁기를 이용하는 고객"
+  ],
+  "features": [
+    "전력 데이터와 도어 센서로 세탁 시작·탈수·종료·방치 여부를 사람 입력 없이 자동으로 감지합니다.",
+    "세탁이 끝난 뒤 일정 시간 수거되지 않으면 단계적으로 수거 알림을 보내고, 그래도 방치되면 사장님에게 알립니다.",
+    "QR로 진행 상황을 확인하고 알림을 선택적으로 신청하는 고객 화면과, 매장 전체 현황·최근 처리 내역을 보는 사장님 대시보드를 제공합니다."
+  ],
+  "featureTags": [
+    "방치 자동 감지",
+    "단계별 알림",
+    "사장님 대시보드"
+  ],
+  "techStack": [
+    "React",
+    "Vite",
+    "Express",
+    "Supabase (PostgreSQL)",
+    "Web Push API"
+  ],
+  "techHighlights": [
+    "전력 임계값(100W 이상 지속·500W 스파이크·20W 이하 60초 유지)을 실측으로 확정해 6상태 상태 머신을 오탐 없이 구현했습니다.",
+    "예상 종료 시간(ETA)을 서버에서 한 번만 계산해, 고객 화면과 사장님 대시보드가 항상 같은 값을 보도록 했습니다.",
+    "vitest·Testing Library로 핵심 로직에 TDD(red→green→refactor)를 적용하고, 검증 전용 Agent로 스펙 대비 누락을 점검합니다."
+  ],
+  "developmentWithAI": "저는 문제 정의, 화면·기능 우선순위, 상태 머신 전이 규칙을 정했습니다. AI는 그 규칙을 CLAUDE.md에 근거로 남기고 화면·유틸 코드를 작성했습니다. 오늘은 기능 하나를 직접 TDD(테스트 먼저 → 실패 확인 → 구현)로 진행했고, 반복되는 테스트 절차와 검증 방법을 Skill·Agent로 만들어 앞으로도 같은 방식으로 점검하게 했습니다.",
+  "agent": {
+    "summary": "기획 문서(CLAUDE.md·docs/)를 단일 진실 원천으로 두고, 역할별 Agent와 Skill을 기획부터 구현·검증까지 함께 사용했습니다.",
+    "agentTools": [
+      {
+        "type": "agent",
+        "name": "spec-analyst",
+        "purpose": "구현 전 요구사항을 CLAUDE.md·docs 기준으로 분해하고, 스펙에 없는 결정은 질문거리로 남깁니다."
+      },
+      {
+        "type": "agent",
+        "name": "client-builder",
+        "purpose": "React 화면·컴포넌트를 mock 데이터 우선 원칙으로 구현합니다."
+      },
+      {
+        "type": "agent",
+        "name": "server-builder",
+        "purpose": "Express 상태 머신·API·알림을 CLAUDE.md 전이 규칙 그대로 구현합니다."
+      },
+      {
+        "type": "agent",
+        "name": "rule-reviewer",
+        "purpose": "변경된 코드를 CLAUDE.md 규칙표와 대조해 위반만 리포트합니다."
+      },
+      {
+        "type": "agent",
+        "name": "test-verifier",
+        "purpose": "TDD로 만든 기능이 요구사항대로 동작하는지 테스트를 직접 실행해 검증합니다."
+      },
+      {
+        "type": "skill",
+        "name": "laundry-design",
+        "purpose": "색 토큰·마스코트·문구 톤 등 디자인 규칙을 화면 작업에 일관되게 적용합니다."
+      },
+      {
+        "type": "skill",
+        "name": "laundry-test",
+        "purpose": "케이스 표 확인 → 스텁 → red → green → refactor 순서의 TDD 절차를 표준화합니다."
+      }
+    ],
+    "workflows": [
+      {
+        "name": "기능 개발 Workflow",
+        "steps": [
+          "docs/backlog.md에서 담당 Task 확인",
+          "작은 단위로 쪼개고 케이스 목록을 표로 확인",
+          "실패하는 테스트 작성 (red)",
+          "테스트를 통과시키는 최소 구현 (green)",
+          "필요하면 리팩토링",
+          "test-verifier Agent로 스펙 대비 검증"
+        ]
+      },
+      {
+        "name": "PR 협업 Workflow",
+        "steps": [
+          "feature/* 브랜치 생성",
+          "경로별로 커밋 분리 (feat/test/chore 등)",
+          "rule-reviewer Agent로 CLAUDE.md 위반 점검",
+          "dev 브랜치로 PR",
+          "/pr 커맨드로 백로그 상태·PR 문구 초안 준비"
+        ]
+      }
+    ]
+  }
+}
