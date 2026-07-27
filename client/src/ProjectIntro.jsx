@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./ProjectIntro.module.css";
 
-// 마스코트: 공식 이미지(assets/mascot.png) 확정 전이라 🐱 이모지를 임시로 사용한다.
-// 확정 스펙 = 크림색 얼굴 · 주황 귀 · 오른쪽 눈 AI 렌즈 · 남색 앞치마 · 작은 미소.
-// 이미지가 확정되면 이모지를 <img>로 교체할 것. (docs/prototype.html과 동일한 규약)
+// 마스코트: 공식 이미지 /mascot.png (public/mascot.png, 314x270) 확정 완료.
+// 크림색 얼굴 · 주황 귀 · 오른쪽 눈 AI 렌즈 · 남색 앞치마 · 작은 미소.
 
 const LAYERS = [
   {
@@ -43,9 +42,7 @@ export default function ProjectIntro() {
         <span className={styles.badge}>AI Agent Challenge · 소상공인 문제 해결</span>
 
         <h1 className={styles.title}>
-          <span className={styles.mascot} aria-hidden="true">
-            🐱
-          </span>
+          <img src="/mascot.png" alt="" aria-hidden="true" className={styles.mascot} />
           빨래집사
         </h1>
         <p className={styles.tagline}>

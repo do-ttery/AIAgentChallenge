@@ -34,8 +34,9 @@
 }
 
 .mascot {
-  font-size: var(--text-display);
-  line-height: 1;
+  height: 40px;
+  width: auto;
+  flex: none;
 }
 
 .tagline {

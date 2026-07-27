@@ -415,9 +415,8 @@ function Shell({ children }) {
     <main className={styles.page}>
       <div className={styles.shell}>
         <header className={styles.head}>
-          {/* 마스코트 공식 이미지(assets/mascot.png) 확정 전이라 🐱을 임시로 쓴다 */}
           <p className={styles.brand}>
-            <span className={styles.mascot}>🐱</span> 빨래집사
+            <img src="/mascot.png" alt="" aria-hidden="true" className={styles.mascot} /> 빨래집사
           </p>
           <p className={styles.store}>○○빨래방 역삼점</p>
         </header>
@@ -430,7 +429,7 @@ function Shell({ children }) {
 function ButlerTip({ children }) {
   return (
     <p className={styles.tip}>
-      <span className={styles.mascot}>🐱</span>
+      <img src="/mascot.png" alt="빨래집사 마스코트" className={styles.mascotTip} />
       <span>{children}</span>
     </p>
   );

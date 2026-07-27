@@ -294,7 +294,9 @@ function TodoCard({ abandoned, attention, handled }) {
   if (todos.length === 0) {
     return (
       <section className={`${styles.todo} ${styles.todoClear}`}>
-        <span className={`${styles.todoIcon} ${styles.todoIconClear}`}>🐱</span>
+        <span className={`${styles.todoIcon} ${styles.todoIconClear}`}>
+          <img src="/mascot.png" alt="" aria-hidden="true" className={styles.todoMascot} />
+        </span>
         <div>
           <h2 className={styles.todoTitle}>다 괜찮아요</h2>
           <p className={styles.todoBody}>

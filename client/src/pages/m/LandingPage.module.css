@@ -39,8 +39,14 @@
 }
 
 .mascot {
-  font-size: var(--text-subtitle);
-  line-height: 1;
+  height: 28px;
+  width: auto;
+  flex: none;
+}
+
+.mascotTip {
+  height: 36px;
+  width: auto;
   flex: none;
 }
 
