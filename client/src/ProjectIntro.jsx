@@ -103,6 +103,9 @@ export default function ProjectIntro() {
           <Link className={styles.link} to="/m/A-1/progress">
             진행 화면
           </Link>
+          <Link className={styles.link} to="/m/store">
+            매장 현황
+          </Link>
           <Link className={styles.link} to="/owner">
             사장님 대시보드
           </Link>
