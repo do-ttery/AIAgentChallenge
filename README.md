@@ -7,7 +7,7 @@
 | 문서 | 답하는 질문 |
 |---|---|
 | [기획서 `plan.md`](docs/plan.md) | **왜** 만드는가 — 문제 정의 · 시나리오 · 성공 지표 |
-| [**백로그 `backlog.md`**](docs/backlog.md) | **무엇을 · 언제 · 누가** — Task 27개 · 우선순위 · 4주 로드맵 · **진행 상태** |
+| [**백로그 `backlog.md`**](docs/backlog.md) | **무엇을 · 언제 · 누가** — Task 28개 · 우선순위 · 4주 로드맵 · **진행 상태** |
 | [`CLAUDE.md`](CLAUDE.md) | 구현 규칙 · 상세 설계 (API Spec · Data Model · State Machine) |
 | [프로토타입](docs/prototype.html) | 화면 시안 (순수 HTML/CSS) |
 
@@ -62,7 +62,7 @@ stateDiagram-v2
     [*] --> IDLE
     IDLE --> RUNNING : 전력 급상승 (세탁 시작 + 세션 생성)
     RUNNING --> SPIN : 탈수 스파이크
-    SPIN --> DONE : 전력 0W 복귀 유지
+    SPIN --> DONE : 전력 20W 이하 60초 유지
     DONE --> COLLECTED : 도어 열림 / 다음 세탁 시작 / 고객 수거 탭
     DONE --> ABANDONED : 종료 후 30분간 수거 신호 없음
     ABANDONED --> COLLECTED : 뒤늦게 수거됨
