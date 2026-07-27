@@ -12,7 +12,7 @@ import { RECENT_NOTIFICATIONS, NOTIFICATION_TYPE } from "./notifications.js";
 
 const STATES = ["IDLE", "RUNNING", "SPIN", "DONE", "COLLECTED", "ABANDONED"];
 const ENDED_STATES = ["DONE", "COLLECTED", "ABANDONED"];
-const ABANDON_AFTER_MIN = 30; // CLAUDE.md — DONE → ABANDONED 타이머
+const ABANDON_AFTER_MIN = 15; // CLAUDE.md — DONE → ABANDONED 타이머 (2026-07-27 30분 → 15분)
 
 const minutesSince = (iso) => Math.round((Date.now() - new Date(iso)) / 60_000);
 
@@ -39,7 +39,7 @@ for (const machine of MACHINES) {
     fail(`${id} — 종료가 시작보다 빠르다`);
   }
 
-  // 방치 판정은 타이머가 결정한다. 30분이 안 지났는데 ABANDONED거나, 넘겼는데 DONE이면 mock이 틀렸다
+  // 방치 판정은 타이머가 결정한다. ABANDONED_AFTER(15분)이 안 지났는데 ABANDONED거나, 넘겼는데 DONE이면 mock이 틀렸다
   const sinceEnd = session.endedAt ? minutesSince(session.endedAt) : null;
   if (session.state === "ABANDONED" && sinceEnd <= ABANDON_AFTER_MIN) {
     fail(`${id} — ABANDONED인데 종료 후 ${sinceEnd}분밖에 안 됐다`);

@@ -294,6 +294,9 @@ export default function LandingPage() {
 /* 진행 — 종료 예상(범위)과 단계. 이 화면에서 가장 크게 읽혀야 하는 정보다 */
 function Progress({ session, status }) {
   const current = stepIndex(status);
+  const pct = progressPercent(session.startedAt, session.etaTo);
+  // 고양이가 바 양끝에서 잘리지 않게 6~94%로 가둔다. 바 채우기(pct)는 실제 값 그대로.
+  const runnerLeft = Math.min(94, Math.max(6, pct));
 
   return (
     <section className={styles.card}>
@@ -304,11 +307,18 @@ function Progress({ session, status }) {
         <p className={styles.etaNote}>진행되면서 범위가 점점 좁혀져요</p>
       </div>
 
-      <div className={styles.bar}>
-        <div
-          className={styles.barFill}
-          style={{ width: `${progressPercent(session.startedAt, session.etaTo)}%` }}
+      {/* 진행 바 위에서 집사 마스코트가 진행률만큼 이동하며 통통 뛴다(장식). */}
+      <div className={styles.track}>
+        <img
+          src="/mascot.png"
+          alt=""
+          aria-hidden="true"
+          className={styles.runner}
+          style={{ left: `${runnerLeft}%` }}
         />
+        <div className={styles.bar}>
+          <div className={styles.barFill} style={{ width: `${pct}%` }} />
+        </div>
       </div>
 
       <ol className={styles.steps}>
@@ -326,7 +336,7 @@ function Progress({ session, status }) {
   );
 }
 
-/* 완료 · 수거 대기. waiting이면 30분을 넘긴 상태지만 문구는 똑같이 비난하지 않는다.
+/* 완료 · 수거 대기. waiting이면 15분을 넘긴 상태지만 문구는 똑같이 비난하지 않는다.
 
    subscribed(subscriberCount > 0)로 한 번 더 갈린다 — "미신청" 상태(T-14의 3번 상태).
    알림 채널이 없으면 "수거 안내를 보내드려요"라는 약속을 할 수 없다 (CLAUDE.md:
@@ -337,7 +347,7 @@ function Finished({ name, session, waiting, subscribed }) {
   const tileText = waiting
     ? "다음 손님을 위해 세탁물을 찾아가 주세요. 오래 두면 집사가 사장님께 보관을 부탁드려요."
     : subscribed
-      ? "30분이 지나면 다음 손님을 위해 수거 안내를 한 번 더 보내드려요."
+      ? "15분이 지나면 다음 손님을 위해 수거 안내를 한 번 더 보내드려요."
       : "지금은 알림을 보내드릴 방법이 없어요. 잊지 말고 빨리 찾아가 주세요 — 오래 걸리면 사장님께 도움을 요청드릴게요.";
 
   return (
@@ -352,11 +362,10 @@ function Finished({ name, session, waiting, subscribed }) {
           <span className={styles.waitChip}>{formatElapsed(session.endedAt)}째 기다리는 중</span>
         </div>
 
-        <button type="button" className={styles.buttonDisabled} disabled>
-          수거했어요 (준비 중)
-        </button>
+        {/* 수거는 문 열림으로 자동 감지한다(상태머신 트리거 ①). 고객이 미리 누르면
+            도착 전 오탐이 생기므로 "수거했어요" 탭 버튼은 두지 않는다(2026-07-27 결정). */}
         <p className={styles.fineprint}>
-          버튼으로 직접 알리는 기능은 아직 준비 중이에요. 다음 손님이 세탁을 시작하면 자동으로 정리돼요.
+          세탁물을 꺼내시면 자동으로 정리돼요. 따로 눌러 알리실 필요 없어요.
         </p>
       </div>
 
