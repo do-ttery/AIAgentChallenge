@@ -1,0 +1,209 @@
+/* T-27 고객용 매장 현황 — LandingPage.module.css와 같은 규약을 쓴다.
+   모바일이 기준. 빨강은 쓰지 않는다. 방치도 방치색(#F08C00)까지만 간다. */
+
+.page {
+  min-height: 100vh;
+  padding: var(--space-3);
+}
+
+.shell {
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ── 헤더 ── */
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1) 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+
+.store {
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+}
+
+.mascot {
+  height: 28px;
+  width: auto;
+  flex: none;
+}
+
+.mascotTip {
+  height: 36px;
+  width: auto;
+  flex: none;
+}
+
+.title {
+  margin: 0;
+  padding: 0 var(--space-1);
+  font-size: var(--text-heading);
+  font-weight: 800;
+}
+
+/* ── 히어로 — 이 화면이 답하는 유일한 질문: 지금 몇 대가 비어 있나 ── */
+.hero {
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-card);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.heroLabel {
+  margin: 0;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.heroCount {
+  margin: var(--space-1) 0 0;
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroUnit {
+  margin-left: 4px;
+  font-size: var(--text-subtitle);
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.heroSub {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-small);
+  opacity: 0.75;
+}
+
+/* ── 폴링 실패 안내 — 이미 데이터가 있는데 갱신만 실패했을 때. 고객 화면은 danger색을 안 쓴다 ── */
+.staleNote {
+  margin: 0;
+  padding: 0 var(--space-1);
+  color: var(--color-text-sub);
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
+/* ── 카드 (로딩·오류·빈 상태) ── */
+.card {
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--text-subtitle);
+  font-weight: 800;
+}
+
+.sub {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+}
+
+.button {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--color-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: var(--text-body);
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+}
+
+.button:active {
+  background: var(--color-primary-dark);
+}
+
+/* ── 기계 번호순 목록 ── */
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.row {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.rowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.rowName {
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+
+.rowNote {
+  margin: 6px 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.rowLabel {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+/* 찾아가지 않은 세탁물 안내 — 방치색까지만, 빨강 금지 */
+.rowNoteWarn {
+  color: var(--state-abandoned);
+  font-weight: 600;
+}
+
+/* ── 집사 한마디 — 사용 가능한 기계가 하나도 없을 때 ── */
+.tip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: var(--text-caption);
+  line-height: 1.6;
+}

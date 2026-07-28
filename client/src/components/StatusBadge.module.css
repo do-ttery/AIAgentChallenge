@@ -1,0 +1,98 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px var(--space-2);
+  border-radius: var(--radius-badge);
+  background: var(--tint);
+  color: var(--state);
+  font-size: var(--text-small);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+/* 세탁 중·탈수 — 지금 돌고 있다는 걸 점의 맥박으로 보인다 */
+.live {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live {
+    animation: none;
+  }
+}
+
+.detail {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* 상태 색 — UI Rule 고정값. 여기서만 정의한다 */
+.idle {
+  --state: var(--state-idle);
+  --tint: #f1f5f9;
+}
+
+.running {
+  --state: var(--state-running);
+  --tint: var(--color-primary-light);
+}
+
+.spin {
+  --state: var(--state-spin);
+  --tint: #e6f4fa;
+}
+
+.done {
+  --state: var(--state-done);
+  --tint: #e9f6ea;
+}
+
+/* 끝난 세션 — 완료와 같은 색이되 점을 옅게 해 시선을 덜 끈다 */
+.collected {
+  --state: var(--state-done);
+  --tint: #f1f5f9;
+}
+
+.collected .dot {
+  opacity: 0.5;
+}
+
+.abandoned {
+  --state: var(--state-abandoned);
+  --tint: var(--state-abandoned-tint);
+}
+
+/* 진한 배경 위 — 상태색은 대비가 안 나오니 흰색으로 뒤집는다.
+   상태는 배지 옆의 기계 이름·문구가 이미 말해주고 있다 */
+.onDark {
+  --state: #fff;
+  --tint: rgba(255, 255, 255, 0.22);
+}
+
+/* 상태색으로 꽉 채운 배지. 카드 배경을 넓게 칠하는 대신 이걸 쓴다 —
+   작고 진한 색이 넓고 옅은 색보다 눈에 잘 띄고, 본문 가독성도 안 깎는다 */
+.solid {
+  background: var(--state);
+  color: #fff;
+}
