@@ -1,5 +1,8 @@
 import "dotenv/config";
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import cors from "cors";
 import express from "express";
 
@@ -37,6 +40,16 @@ app.use("/api/subscriptions", subscriptionsRouter);
 // 조회 API (T-13)
 app.use("/api/machines", machinesRouter);
 app.use("/api/notifications", notificationsRouter);
+
+// 배포 시 client 빌드 결과물을 같은 서버에서 정적 서빙한다 (T-25).
+// dev에서는 client/dist가 없어 express.static이 그냥 next()로 넘긴다.
+const clientDist = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "client", "dist");
+app.use(express.static(clientDist));
+app.get(/^(?!\/api|\/ingest).*/, (req, res, next) => {
+  res.sendFile(path.join(clientDist, "index.html"), (err) => {
+    if (err) next();
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`빨래집사 server → http://localhost:${PORT}`);
