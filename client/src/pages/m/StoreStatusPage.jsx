@@ -117,7 +117,7 @@ export default function StoreStatusPage() {
 
       {sorted.length > 0 && availableCount === 0 && (
         <p className={styles.tip}>
-          <span className={styles.mascot}>🐱</span>
+          <img src="/mascot.png" alt="빨래집사 마스코트" className={styles.mascotTip} />
           <span>지금은 모든 세탁기가 사용 중이에요. 아래에서 세탁기별 남은 시간을 확인해 보세요.</span>
         </p>
       )}
@@ -169,9 +169,8 @@ function Shell({ children }) {
     <main className={styles.page}>
       <div className={styles.shell}>
         <header className={styles.head}>
-          {/* 마스코트 공식 이미지(assets/mascot.png) 확정 전이라 🐱을 임시로 쓴다 */}
           <p className={styles.brand}>
-            <span className={styles.mascot}>🐱</span> 빨래집사
+            <img src="/mascot.png" alt="" aria-hidden="true" className={styles.mascot} /> 빨래집사
           </p>
           <p className={styles.store}>○○빨래방 역삼점</p>
         </header>

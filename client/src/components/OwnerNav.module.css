@@ -24,8 +24,9 @@
 }
 
 .mascot {
-  font-size: var(--text-heading);
-  line-height: 1;
+  height: 28px;
+  width: auto;
+  flex: none;
 }
 
 .store {

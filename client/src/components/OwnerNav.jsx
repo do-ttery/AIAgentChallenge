@@ -28,9 +28,8 @@ export default function OwnerNav() {
   return (
     <aside className={styles.nav}>
       <div className={styles.brand}>
-        {/* 마스코트 공식 이미지(assets/mascot.png) 확정 전이라 🐱을 임시로 쓴다 */}
         <p className={styles.brandName}>
-          <span className={styles.mascot}>🐱</span> 빨래집사
+          <img src="/mascot.png" alt="" aria-hidden="true" className={styles.mascot} /> 빨래집사
         </p>
         <p className={styles.store}>○○빨래방 역삼점</p>
       </div>

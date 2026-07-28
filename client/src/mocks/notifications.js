@@ -12,7 +12,7 @@
    알림은 세션에 붙는다. 기계의 현재 세션뿐 아니라 이미 끝난 과거 세션(s-099, s-100)의 알림도 남는다.
    machines.js의 세션과 시각이 맞물려 있으므로 한쪽만 고치면 이야기가 깨진다.
    - s-103(세탁기 3)은 subscriberCount가 0이라 고객 알림이 없고 OWNER_ALERT만 있다
-   - COLLECT_1은 종료 30분 뒤에만 찍힌다 (방치 판정 시각) */
+   - COLLECT_1은 종료 15분 뒤에만 찍힌다 (방치 판정 시각, 2026-07-27 30분 → 15분) */
 
 const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -27,15 +27,6 @@ export const NOTIFICATION_TYPE = {
 
 export const RECENT_NOTIFICATIONS = [
   {
-    id: "n-206",
-    sessionId: "s-103",
-    machineId: "m3",
-    machineName: "세탁기 3",
-    sessionState: "ABANDONED",
-    type: NOTIFICATION_TYPE.OWNER_ALERT,
-    sentAt: minutesAgo(2), // 종료(32분 전) + 방치 30분. QR 미신청이라 사장님에게만 갔다
-  },
-  {
     id: "n-205",
     sessionId: "s-102",
     machineId: "m2",
@@ -43,6 +34,15 @@ export const RECENT_NOTIFICATIONS = [
     sessionState: "DONE",
     type: NOTIFICATION_TYPE.COMPLETED,
     sentAt: minutesAgo(12),
+  },
+  {
+    id: "n-206",
+    sessionId: "s-103",
+    machineId: "m3",
+    machineName: "세탁기 3",
+    sessionState: "ABANDONED",
+    type: NOTIFICATION_TYPE.OWNER_ALERT,
+    sentAt: minutesAgo(17), // 종료(32분 전) + 방치 15분. QR 미신청이라 사장님에게만 갔다
   },
   {
     id: "n-204",
@@ -60,7 +60,7 @@ export const RECENT_NOTIFICATIONS = [
     machineName: "세탁기 1",
     sessionState: "COLLECTED",
     type: NOTIFICATION_TYPE.COLLECT_1,
-    sentAt: minutesAgo(40), // 종료(70분 전) + 방치 30분 → 이후 도어 열림으로 수거 확인
+    sentAt: minutesAgo(55), // 종료(70분 전) + 방치 15분 → 이후 도어 열림으로 수거 확인
   },
   {
     id: "n-202",

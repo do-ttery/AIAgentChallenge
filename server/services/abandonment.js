@@ -9,7 +9,7 @@ import { sendPush } from "./push.js";
 import { buildNotificationPayload } from "./notificationMessages.js";
 
 // 방치 자동 대응 (T-11)
-// CLAUDE.md State Machine 섹션: DONE → ABANDONED는 "종료 후 30분 수거 신호 없음"이라는
+// CLAUDE.md State Machine 섹션: DONE → ABANDONED는 "종료 후 ABANDONED_AFTER_MIN분(현재 15분) 수거 신호 없음"이라는
 // 시간 기반 전이라, ingest 이벤트가 들어올 때만 도는 stateMachine.js와 달리 별도의
 // 타이머 메커니즘이 필요하다. 세션 하나가 이 서버 프로세스 안에서만 진행된다는 전제는
 // stateMachine.js의 doneCandidateSince와 동일하므로, 여기서도 setTimeout을 메모리에
@@ -198,7 +198,7 @@ export async function recordNotification(db, sessionId, type, machineId) {
   return true;
 }
 
-// 30분 타이머 만료 시 실행. 그 사이 이미 수거(COLLECTED)됐으면 취소된 타이머라
+// 방치 타이머(ABANDONED_AFTER_MIN, 현재 15분) 만료 시 실행. 그 사이 이미 수거(COLLECTED)됐으면 취소된 타이머라
 // 여기까지 오지 않는 게 정상이지만, 방어적으로 한 번 더 현재 상태를 확인한다.
 export async function handleAbandonTimeout(machineId, sessionId) {
   const db = getDb();
@@ -236,7 +236,7 @@ export async function handleAbandonTimeout(machineId, sessionId) {
   }
 }
 
-// 1차 수거 알림 이후 +30분에도 여전히 ABANDONED면 2차 수거 알림을 남긴다.
+// 1차 수거 알림 이후 +COLLECT_REMINDER_INTERVAL_MIN분(현재 15분)에도 여전히 ABANDONED면 2차 수거 알림을 남긴다.
 function scheduleSecondReminder(machineId, sessionId, firstReminderAt = Date.now()) {
   clearReminderTimer(sessionId);
 

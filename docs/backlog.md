@@ -172,7 +172,7 @@ State Machine의 종료 판정은 이렇게 정의돼 있다.
 | T-08 | Express 서버 + `POST /ingest/:machineId` — 전력 · 도어 이벤트 단일 입구 | P0 | 도경 | 2 | T-01 | ✅ |
 | T-09 | Supabase 5개 테이블 + 클라이언트 초기화 + 세탁기 4대 시드 (`machine` `session` `subscription` `reading` `notification`) — 2026-07-16 SQLite→Supabase 전환 결정. `subscription.keys`는 TEXT(JSON 문자열). **2026-07-20 확인: 실제 Supabase 프로젝트 생성·`.env` 키 발급까지 완료(서원). DB 연결·시드 4대 조회 확인됨** | P0 | 도경 | 3 | T-08 | ✅ |
 | T-10 | **상태 머신** — 6상태 전이 · 중복 전이 방지 · 미정의 이벤트 무시 · 전이 로그 — 2026-07-20 구현·실DB 테스트·검증 완료 (`server/services/stateMachine.js`). ABANDONED→COLLECTED·COLLECTED시 machine.status IDLE 리셋 결정 CLAUDE.md 반영 | P0 | 도경 | 3 | T-05, T-09 | ✅ |
-| T-11 | 방치 자동 대응 — 30분 타이머 · 수거 시 취소 · 상수 분리 · 처리 결과 로그 — 2026-07-21 구현 완료(`server/services/abandonment.js`). 1차/2차 수거 알림·OWNER_ALERT 분기까지 연결됨 | P0 | 도경 | 3 | T-10 | ✅ |
+| T-11 | 방치 자동 대응 — 방치 타이머 · 수거 시 취소 · 상수 분리 · 처리 결과 로그 — 2026-07-21 구현 완료(`server/services/abandonment.js`). 1차/2차 수거 알림·OWNER_ALERT 분기까지 연결됨. **2026-07-27: 방치·2차 알림 간격 각 30분 → 15분 단축(제품 결정, `constants.js`·CLAUDE.md 반영)** | P0 | 도경 | 3 | T-10 | ✅ |
 | T-12 | Web Push — VAPID · Service Worker · 구독 저장 · 알림 5종 문구 · 중복 발송 방지 — 2026-07-21: 백엔드(VAPID 초기화·`POST /api/subscriptions`·알림 5종 문구·notification 테이블 기반 중복 방지) 완료. 2026-07-22 실기기 테스트로 버그 3개 발견·수정: (1) 구독 중복판단이 session_id만 보고 기기 구분을 안 해서 다른 기기 구독이 조용히 무시됨(`subscriptions.js`), (2) 알림 탭 시 항상 사이트 루트로만 가던 딥링크 문제 — 알림에 이동 경로(url) 실어서 해결(`notificationMessages.js`·`push-worker.js`), (3) DEPARTURE·COMPLETED 트리거 미연결 — `stateMachine.js`의 RUNNING→SPIN·SPIN→DONE 전이 지점에 연결 완료. **알림 5종 전부 실기기(안드로이드)로 발송·딥링크까지 확인됨**. 2026-07-22 실매장 실기기 구동(T-23)에서 버그 1개 추가 발견·수정: DEPARTURE("곧 끝나요")를 SPIN 진입(=첫 탈수) 시점에 걸었더니, 표준 코스는 탈수 스파이크가 4번(헹굼 3회+최종탈수)이라 첫 탈수는 코스 초반이라 "곧 끝난다"는 문구가 실제로는 거짓이었음. 상태머신은 몇 번째 탈수인지 구분 못 해(`SPIN→RUNNING` 역전이 없음) 상태 기반으로는 못 고치고, 대신 T-13과 같은 eta 계산(`STANDARD_COURSE_MIN - ETA_RANGE_MIN`) 기반 시간 타이머로 교체(`abandonment.js` `scheduleDepartureAlert`, 세션 시작 시점에 예약, 조기 종료 시 가드로 스킵) | P0 | 도경 | 3 | T-09 | ✅ |
 | T-13 | 조회 API — 기계 목록 · 기계별 상태 · 최근 알림 (대시보드·랜딩이 소비) — 2026-07-20 결정: 담당 도경→서원. `GET /api/machines`·`GET /api/machines/:id`·`GET /api/notifications/recent` 전부 구현 완료 (세션 조인 · eta 계산 · subscriberCount · 최근 알림 조인) | P0 | 서원 | 3 | T-09 | ✅ |
 
@@ -181,7 +181,7 @@ State Machine의 종료 판정은 이렇게 정의돼 있다.
 | ID | Task | 우선 | 담당 | 주차 | 의존 | 상태 |
 |---|---|---|---|---|---|---|
 | T-14 | QR 랜딩 화면 `/m/:machineId` — mock 데이터 · 4개 상태(일반/신청완료/미신청/방치안내) | P0 | 서원 | 2 | T-02 | ✅ |
-| T-15 | 진행 화면 — mock 데이터 · 상태 배지 · 예상 종료 **시간 범위** · 진행 단계 | P0 | 서원 | 2 | T-02 | ✅ |
+| T-15 | 진행 화면 — mock 데이터 · 상태 배지 · 예상 종료 **시간 범위** · 진행 단계 — **2026-07-27: 진행 바 위 마스코트 러너(진행률 따라 이동+hop, reduced-motion 대응) 추가, 완료 화면 "수거했어요(준비 중)" 버튼 제거(수거는 문 열림으로만 판단, 전이표 트리거 ③ 제거)** | P0 | 서원 | 2 | T-02 | ✅ |
 | T-16 | 사장님 대시보드 `/owner` — mock 데이터 · 요약 3종 · 기계 카드 · 최근 처리 내역 | P0 | 서원 | 2 | T-02 | ✅|
 | T-17 | mock → 실제 API 교체 + 5초 폴링 · 로딩/오류 상태 — 2026-07-21: LandingPage(`GET /api/machines/:id`)·대시보드 최근 처리 내역(`GET /api/notifications/recent`)까지 전부 fetch로 교체 완료. machineId 변경 시 재폴링, 404/일반 에러 구분, stale-but-shown 처리까지 반영 | P0 | 서원 | 3 | T-13 | ✅ |
 | T-18 | QR 알림 신청 플로우 — 권한 요청 · 구독 전송 · 거부 안내 · 진행 중 세탁 없음 안내 — 2026-07-22: 4개 요구사항 전부 구현. 진행중없음안내는 IDLE일 때 버튼 자체가 안 뜨는 구조로 해결. 안드로이드 실기기로 권한요청·구독·5종 알림 발송·딥링크까지 전부 확인. **iOS는 Safari 정책상 홈 화면 추가(standalone) 필수** — 매니페스트·iOS 메타태그는 추가했으나 실기기 확인은 인앱 브라우저 문제로 완전히 못 끝냄, 카카오톡 등 인앱 브라우저에서는 원천적으로 불가(iOS 전체 브라우저가 WebKit 강제) | P0 | 서원 | 3 | T-12 | ✅ |
