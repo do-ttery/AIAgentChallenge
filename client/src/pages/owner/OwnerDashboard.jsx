@@ -3,6 +3,7 @@ import { NOTIFICATION_TYPE } from "../../mocks/notifications.js";
 import OwnerNav from "../../components/OwnerNav.jsx";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import { formatElapsed, formatRange, formatTime, progressPercent } from "../../utils/time.js";
+import { mascotPose } from "../../utils/mascotPose.js";
 import styles from "./OwnerDashboard.module.css";
 
 /* T-16 사장님 대시보드.
@@ -165,7 +166,10 @@ export default function OwnerDashboard() {
   const attention = rawMachines.filter((machine) => machine.needsAttention);
   const handled = rawNotifications.filter((n) => n.sessionState === "COLLECTED").length;
 
-  const machines = [...rawMachines].sort(byUrgency);
+  // 대시보드는 기계 번호순(1·2·3·4)으로 고정 표시한다 (사장님 요청).
+  // byUrgency(급한 순)는 함수로 남겨두되 여기선 쓰지 않는다.
+  const machineNo = (m) => Number(String(m.name).replace(/\D/g, "")) || 0;
+  const machines = [...rawMachines].sort((a, b) => machineNo(a) - machineNo(b));
 
   return (
     <div className={styles.layout}>
@@ -206,7 +210,7 @@ export default function OwnerDashboard() {
             <section>
               <div className={styles.sectionHead}>
                 <h2>기계 현황</h2>
-                <span>전력·도어 센서로 자동 감지 · 5초마다 갱신 · 급한 순</span>
+                <span>전력·도어 센서로 자동 감지 · 5초마다 갱신 · 번호 순</span>
               </div>
               <div className={styles.machines}>
                 {machines.map((machine) => (
@@ -355,7 +359,22 @@ function MachineCard({ machine }) {
   return (
     <article className={`${styles.machine} ${status === "ABANDONED" ? styles.machineAlert : ""}`}>
       <div className={styles.machineTop}>
-        <h3 className={styles.machineName}>{name}</h3>
+        <div className={styles.machineTitle}>
+          {/* 세탁 중엔 다리 저으며 달리는 스프라이트, 그 외엔 상태별 정지 포즈 */}
+          {isRunning ? (
+            <span className={styles.cardRunner} aria-hidden="true" />
+          ) : (
+            mascotPose(status) && (
+              <img
+                className={styles.cardMascot}
+                src={mascotPose(status)}
+                alt=""
+                aria-hidden="true"
+              />
+            )
+          )}
+          <h3 className={styles.machineName}>{name}</h3>
+        </div>
         {/* 방치만 꽉 채운다. 카드 배경을 칠하는 대신 배지 하나를 진하게 — 본문 대비를 안 깎는다 */}
         <StatusBadge
           status={status}
