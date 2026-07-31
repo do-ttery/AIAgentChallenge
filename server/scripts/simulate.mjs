@@ -60,7 +60,7 @@ const SIM_INTERVAL_MS = 300; // 운영 5초 폴링 1회 = 시뮬레이터 300ms 
 const DONE_REAL_INTERVAL_MS = 5000; // SPIN → DONE 구간은 운영과 동일한 5초 간격을 실제로 기다림
 const DONE_TICKS = Math.ceil(DONE_HOLD_SEC / (DONE_REAL_INTERVAL_MS / 1000)) + 1; // 60초 → 13틱
 
-const SCENARIOS = ["normal", "abandoned", "no-qr", "sensor-error"];
+const SCENARIOS = ["normal", "abandoned", "no-qr", "sensor-error", "collect"];
 
 function parseArgs(argv) {
   const args = { scenario: null, machineId: null, machineName: null, server: DEFAULT_SERVER, list: false };
@@ -98,6 +98,8 @@ function printUsage() {
   no-qr         ③ QR 미신청 방치 — subscription을 만들지 않고 DONE까지만 진행, 수거 신호 없이 종료.
                   서버 방치 타이머가 지나면 ABANDONED → OWNER_ALERT가 발생한다(구독 채널이 없으므로).
   sensor-error  센서 오류   — 음수 watt · 값 끊김 · 이상치 스파이크
+  collect       수거(리셋)  — door_open만 1회 전송. DONE/ABANDONED → COLLECTED → IDLE.
+                  RUNNING/SPIN 중이면 서버가 무시한다. 부스 루프에서 방치 시연 후 리셋용.
 
 ④ 대시보드 확인은 별도 시나리오가 아니라, 위 ①~③을 돌린 뒤
    GET /api/machines · GET /api/machines/:id · GET /api/notifications/recent 로 조회해서 확인한다.
@@ -330,6 +332,15 @@ async function scenarioNoQr(server, machineId) {
   logAbandonGuidance(label, { hasSubscription: false });
 }
 
+// door_open만 보내 수거를 재현한다 (DONE/ABANDONED → COLLECTED → machine IDLE).
+// 부스 루프 스크립트가 no-qr 시나리오로 방치를 보여준 뒤, 다음 사이클을 위해
+// 기계를 IDLE로 되돌릴 때 쓴다. RUNNING/SPIN 중이면 서버가 이벤트를 무시한다
+// (CLAUDE.md — 탈수 진동 오탐 방어).
+async function scenarioCollect(server, machineId) {
+  const label = "수거(리셋)";
+  await sendDoor(server, machineId, label, "door_open", "DONE/ABANDONED → COLLECTED → IDLE 예상");
+}
+
 async function scenarioSensorError(server, machineId) {
   const label = "센서 오류";
   await idlePhase(server, machineId, label, 2);
@@ -399,6 +410,7 @@ async function main() {
     abandoned: scenarioAbandoned,
     "no-qr": scenarioNoQr,
     "sensor-error": scenarioSensorError,
+    collect: scenarioCollect,
   };
 
   await runners[args.scenario](args.server, machineId);
