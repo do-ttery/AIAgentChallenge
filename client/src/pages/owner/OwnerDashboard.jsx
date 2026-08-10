@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NOTIFICATION_TYPE } from "../../mocks/notifications.js";
+import { NOTIFICATION_TYPE } from "../../constants.js";
 import OwnerNav from "../../components/OwnerNav.jsx";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import { formatElapsed, formatRange, formatTime, progressPercent } from "../../utils/time.js";
@@ -30,13 +30,24 @@ const RUNNING_STATES = ["RUNNING", "SPIN"];
 /* 사장님이 손대야 하는 순서. 기계 번호순이 아니라 급한 순으로 본다 */
 const URGENCY = ["ABANDONED", "DONE", "SPIN", "RUNNING", "COLLECTED", "IDLE"];
 
+/* 이름 끝 숫자를 뽑아 번호순 정렬에 쓴다 ("세탁기 2" → 2). 숫자가 없으면 이름 문자열로 */
+function machineNumber(machine) {
+  const match = String(machine.name ?? "").match(/\d+/);
+  return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
+}
+
 function byUrgency(a, b) {
   const rank = (machine) => {
     const base = URGENCY.indexOf(machine.status);
     /* 확인 필요는 방치보다는 덜 급하지만 나머지보다는 먼저 본다 */
     return machine.needsAttention && machine.status === "IDLE" ? 0.5 : base;
   };
-  return rank(a) - rank(b);
+  /* 급함이 같으면(예: 다 대기) 기계 번호순으로 — DB 저장 순서(2,1,4,3)가 새지 않게 */
+  const byRank = rank(a) - rank(b);
+  if (byRank !== 0) return byRank;
+  const byNumber = machineNumber(a) - machineNumber(b);
+  if (byNumber !== 0) return byNumber;
+  return String(a.name ?? "").localeCompare(String(b.name ?? ""), "ko");
 }
 
 /* 처리 내역 한 줄이 사장님 일인지 아닌지를 여기서 가른다.
