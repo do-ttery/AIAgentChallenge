@@ -75,6 +75,79 @@
   font-size: var(--text-small);
 }
 
+/* ── 사장님 알림 구독 (T-29) ──
+   session에 안 묶인 사장님(매장) 채널로 이 폰을 구독시킨다. 아직 안 받고 있을 때만
+   primary색으로 눈에 띄게, 받고 있으면 완료색 한 줄로 조용히 — 매번 눈에 걸리면 안 된다. */
+.pushBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-primary-light);
+  flex-wrap: wrap;
+}
+
+.pushText {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--color-primary-dark);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.pushIcon {
+  flex: none;
+  font-size: var(--text-body);
+}
+
+.pushButton {
+  flex: none;
+  padding: 7px var(--space-2);
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--color-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: var(--text-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pushButton:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.pushButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.pushError {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+/* 이미 구독 중 — 완료색으로 조용히, 매번 버튼을 다시 보여주지 않는다 */
+.pushOn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  background: #e9f6ea;
+  color: var(--state-done);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
 /* ── ① 지금 챙길 것 ──
    방치색(#F08C00)은 UI Rule 고정값이라 hex를 바꿀 수 없고, 빨강은 오류 전용이라 못 쓴다.
    그래서 색을 바꾸는 대신 채워서 쓴다 — 옅은 배경 위의 주황 글씨는 묽다.
