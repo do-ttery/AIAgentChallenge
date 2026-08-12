@@ -4,6 +4,7 @@ import OwnerNav from "../../components/OwnerNav.jsx";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import { formatElapsed, formatRange, formatTime, progressPercent } from "../../utils/time.js";
 import { mascotPose } from "../../utils/mascotPose.js";
+import { subscribeToPush } from "../../utils/push.js";
 import styles from "./OwnerDashboard.module.css";
 
 /* T-16 사장님 대시보드.
@@ -129,6 +130,59 @@ export default function OwnerDashboard() {
   const [notifLoading, setNotifLoading] = useState(true);
   const [notifError, setNotifError] = useState(null);
 
+  /* T-29 — 사장님 알림 구독. QR 손님 구독(T-18)과 같은 push-worker·VAPID·utils/push.js를
+     쓰지만, sessionId 없이 보내 subscription.session_id가 NULL인 "사장님(매장) 채널"로
+     저장된다(CLAUDE.md Notification Rule). 이 화면은 노트북으로 열어도, 이 버튼(또는 아래
+     자동 구독)은 실제로 알림을 받을 그 기기의 브라우저에서 실행해야 그 기기가 구독된다. */
+  const [ownerSubscribed, setOwnerSubscribed] = useState(false);
+  const [ownerSubscribing, setOwnerSubscribing] = useState(false);
+  const [ownerSubscribeError, setOwnerSubscribeError] = useState(null);
+
+  async function handleOwnerSubscribe() {
+    if (ownerSubscribing) return;
+    setOwnerSubscribing(true);
+    setOwnerSubscribeError(null);
+    try {
+      const result = await subscribeToPush();
+      if (!result.ok) {
+        setOwnerSubscribeError(result.error);
+        return;
+      }
+      setOwnerSubscribed(true);
+    } catch (err) {
+      console.error("[OwnerDashboard] 알림 구독 실패", err);
+      setOwnerSubscribeError("알림 신청에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setOwnerSubscribing(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+    /* OwnerGate가 패스코드 확인 성공 직후(같은 클릭 안에서) 남겨둔 신호다. 브라우저는
+       알림 권한 요청을 반드시 "사용자 제스처" 안에서만 허용하는데, 로그인 클릭이 그 제스처다
+       — 그래서 별도 버튼 클릭 없이 여기서 바로 시도한다(2026-08-10 결정). 실패해도(제스처가
+       이미 만료됐거나 권한 거부) 조용히 넘어가고, 아래 렌더의 수동 버튼이 항상 대체 경로다. */
+    if (sessionStorage.getItem("owner_just_authed") === "1") {
+      sessionStorage.removeItem("owner_just_authed");
+      handleOwnerSubscribe();
+      return;
+    }
+
+    /* 로컬 state를 신뢰하지 않고 브라우저에 실제 구독이 있는지 물어본다 —
+       새로고침해도 "신청 전"으로 잘못 되돌아가지 않게 (T-18에서 겪은 것과 같은 종류의 버그 방지) */
+    (async () => {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration("/push-worker.js");
+        const existing = await registration?.pushManager.getSubscription();
+        if (existing) setOwnerSubscribed(true);
+      } catch {
+        // 조회 실패는 조용히 무시 — 최초 상태는 "미신청"으로 둔다
+      }
+    })();
+  }, []);
+
   async function loadMachines() {
     try {
       const res = await fetch("/api/machines");
@@ -198,6 +252,13 @@ export default function OwnerDashboard() {
             </p>
           </div>
         </header>
+
+        <OwnerPushBar
+          subscribed={ownerSubscribed}
+          subscribing={ownerSubscribing}
+          error={ownerSubscribeError}
+          onSubscribe={handleOwnerSubscribe}
+        />
 
         {loading ? (
           <p className={styles.strip}>기계 목록을 불러오는 중이에요…</p>
@@ -343,6 +404,35 @@ function TodoCard({ abandoned, attention, handled }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+/* T-29 — 이 화면은 노트북·카운터에서 보는 화면이지만, 사장님이 매장 밖에 있을 때도
+   "손이 필요해요"가 뜨는 순간을 알아야 한다. 구독 여부에 따라 문구·색만 바뀐다 —
+   버튼을 두 번 보여주지 않는다. */
+function OwnerPushBar({ subscribed, subscribing, error, onSubscribe }) {
+  if (subscribed) {
+    return (
+      <p className={styles.pushOn}>
+        <span className={styles.pushIcon}>🔔</span>
+        <span>이 기기로 알림을 받고 있어요 — 사장님 손이 필요한 순간 바로 알려드려요.</span>
+      </p>
+    );
+  }
+
+  return (
+    <div className={styles.pushBar}>
+      <p className={styles.pushText}>
+        <span className={styles.pushIcon}>🔔</span>
+        <span>
+          지금은 이 화면을 보고 있을 때만 확인돼요. 이 화면을 안 보고 계셔도 알림으로 받아보시겠어요?
+        </span>
+      </p>
+      <button type="button" className={styles.pushButton} disabled={subscribing} onClick={onSubscribe}>
+        {subscribing ? "신청 중…" : "이 기기로 알림 받기"}
+      </button>
+      {error && <p className={styles.pushError}>{error}</p>}
+    </div>
   );
 }
 

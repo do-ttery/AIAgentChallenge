@@ -46,6 +46,11 @@ export default function OwnerGate({ children }) {
       });
       if (res.ok) {
         sessionStorage.setItem(AUTH_KEY, "1");
+        /* T-29 — 이 클릭(사용자 제스처)이 살아있는 동안 알림 구독을 자동으로 시도하라는
+           신호. OwnerDashboard가 마운트되면서 이 플래그를 보고 곧바로 시도한 뒤 지운다 —
+           브라우저는 알림 권한 요청을 제스처 밖에서 부르면 막기 때문에, 로그인 클릭에
+           최대한 붙여서 보낸다(2026-08-10 결정, 실패해도 대시보드의 수동 버튼이 대체 경로). */
+        sessionStorage.setItem("owner_just_authed", "1");
         setAuthed(true);
       } else if (res.status === 401) {
         setError("패스코드가 맞지 않아요.");

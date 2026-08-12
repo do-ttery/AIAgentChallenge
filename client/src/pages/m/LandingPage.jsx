@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import StatusBadge from "../../components/StatusBadge.jsx";
 import { formatElapsed, formatRange, formatTime, progressPercent } from "../../utils/time.js";
+import { subscribeToPush } from "../../utils/push.js";
 import styles from "./LandingPage.module.css";
 
 /* T-14 + T-15 — 고객 화면. QR을 찍으면 열리는 단 하나의 화면이다.
@@ -31,15 +32,6 @@ const STEPS = [
 
 const RUNNING_STATES = ["RUNNING", "SPIN"];
 
-/* T-18 — QR 알림 신청. VAPID 공개키(base64url)를 PushManager가 요구하는
-   Uint8Array로 바꾼다 — web-push 생태계의 표준 변환 방식. */
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
-}
-
 function stepIndex(status) {
   if (status === "RUNNING") return 0;
   if (status === "SPIN") return 1;
@@ -59,37 +51,19 @@ export default function LandingPage() {
   const [subscribing, setSubscribing] = useState(false);
   const [subscribeError, setSubscribeError] = useState(null);
 
-  /* T-18 — 권한 요청 → Service Worker 등록 → 구독 → 서버 저장. 브라우저 미지원·권한 거부·
-     저장 실패는 전부 subscribeError로 모아서 화면에 경고 타일로 보여준다(아래 렌더 부분). */
+  /* T-18 — 권한 요청 → Service Worker 등록 → 구독 → 서버 저장(utils/push.js 공용 로직).
+     브라우저 미지원·권한 거부·저장 실패는 전부 subscribeError로 모아서 화면에 경고 타일로
+     보여준다(아래 렌더 부분). */
   async function handleSubscribe(sessionId) {
     if (subscribing) return;
     setSubscribing(true);
     setSubscribeError(null);
     try {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        setSubscribeError("이 브라우저는 알림 신청을 지원하지 않아요.");
+      const result = await subscribeToPush(sessionId);
+      if (!result.ok) {
+        setSubscribeError(result.error);
         return;
       }
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setSubscribeError("알림 권한이 거부됐어요. 브라우저 설정에서 허용 후 다시 시도해 주세요.");
-        return;
-      }
-      await navigator.serviceWorker.register("/push-worker.js");
-      const registration = await navigator.serviceWorker.ready;
-      const pushSubscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC),
-      });
-      const { endpoint, keys } = pushSubscription.toJSON();
-
-      const res = await fetch("/api/subscriptions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, endpoint, keys }),
-      });
-      if (!res.ok) throw new Error(`구독 저장 실패 (HTTP ${res.status})`);
-
       setSubscribed(true);
     } catch (err) {
       console.error("[LandingPage] 알림 구독 실패", err);
